@@ -1,0 +1,31 @@
+name: 🔧 Change request
+description: A scoped, well-understood change — kicks off the Change Request flow.
+title: 'chore: '
+labels: ['change-request']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This maps to the **Change Request flow** in [WORKFLOW.md](../../WORKFLOW.md):
+        `/goal` → `/tdd` → `/reviewer` → `/push-pr`.
+  - type: textarea
+    id: requirement
+    attributes:
+      label: Requirement
+      description: What should change, precisely?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Testable conditions for "done".
+    validations:
+      required: true
+  - type: input
+    id: scope
+    attributes:
+      label: Out of scope
+      description: What this change explicitly will NOT do.
+    validations:
+      required: false

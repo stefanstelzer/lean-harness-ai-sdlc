@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+#
+# Pre-push gate — mirrors the "Git / Pre-push" lane in WORKFLOW.md.
+# Order: architecture gate → security scan → unit tests. Fail fast.
+
+echo "▶ Archgate…"
+npm run --silent archgate
+
+echo "▶ Trivy security scan…"
+sh scripts/run-trivy.sh
+
+echo "▶ Unit tests…"
+npm run --silent test:unit
+
+echo "✅ Pre-push checks passed."

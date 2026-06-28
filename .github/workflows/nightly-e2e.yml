@@ -1,0 +1,31 @@
+name: Nightly E2E
+
+# Mirrors the "Nightly: full test suite (Unit, Int., Smoke) + e2e" lane.
+on:
+  schedule:
+    - cron: '0 3 * * *' # 03:00 UTC daily
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: Full end-to-end suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Full test suite
+        run: npm test
+      - name: E2E
+        run: npm run test:e2e

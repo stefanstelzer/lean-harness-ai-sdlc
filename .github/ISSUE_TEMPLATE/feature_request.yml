@@ -1,0 +1,31 @@
+name: ✨ Feature request
+description: Propose a new capability — kicks off the Feature flow.
+title: 'feat: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This maps to the **Feature flow** in [WORKFLOW.md](../../WORKFLOW.md):
+        `/discovery` → `/grill-me-with-context` → `/prd-to-plan` → `/tdd`.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / job to be done
+      description: What user or business problem does this solve? Avoid jumping to a solution.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed direction
+      description: Optional — a rough idea or hypothesis. Discovery may change it.
+    validations:
+      required: false
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: How will we know it's done? Each bullet should be testable.
+    validations:
+      required: false
