@@ -51,6 +51,7 @@ You should consider this rule active whenever the work touches:
 - The Vitest unit-test layer and coverage (`GEN-005`).
 - The Manual Test Plan requirement on PRs and plan files (`GEN-006`).
 - Versioning, the SemVer floor, and the release pipeline (`GEN-007`).
+- Generated plugin/extension artefacts and the `.agents/` → per-tool sync (`GEN-008`).
 - `tsconfig.json`, `vitest.config.ts`, `eslint.config.js`, `commitlint.config.cjs`, `package.json`, CI workflow files, and any new tooling that affects all contributors.
 
 When in doubt whether an edit is tooling- or process-adjacent, load the ADRs and

@@ -1,0 +1,165 @@
+---
+name: reviewer
+description: Code review skill. Validates all code changes against project ADRs using domain-specific sub-agents. Invoke after code modifications to ensure full ADR compliance before committing or opening a PR.
+allowed-tools: Read, Glob, Grep, Agent, Bash(git:*), Bash(archgate:*), Bash(npm run archgate:*)
+---
+# Reviewer Skill
+
+Validates code changes against ADRs using **focused sub-agents** for each affected domain. Uses `archgate review-context` to gather all data in a single call, then delegates each domain to a dedicated sub-agent for verification. This is the architecture gate (archgate) before push/PR (see `WORKFLOW.md`).
+
+## Pre-Validation Requirement
+
+The harness workflow requires ADRs to be read BEFORE writing code. When invoked as a post-coding validation step, this skill verifies:
+
+1. Domain-relevant ADRs were read before implementation
+2. Code complies with all applicable ADRs (Do's and Don'ts)
+3. No architectural drift from documented decisions
+4. File structure, naming conventions, and dependency boundaries are respected
+
+## Validation Workflow
+
+### Step 1: Gather Context
+
+Run `archgate review-context --run-checks` via the Bash tool (`npm run archgate` runs the bare `archgate check` gate). This checks all unstaged changes against the main branch.
+
+Use `--staged` only if the user has explicitly staged files (e.g., before a commit). In most development workflows, files are NOT staged — the agent writes files with Write/Edit tools which do not run `git add`. Using `--staged` on unstaged files returns nothing.
+
+This single call returns everything needed (JSON output):
+
+- **`allChangedFiles`** — All changed files (unstaged vs main branch, or staged if `--staged` was used)
+- **`domains`** — Changed files grouped by domain, each with applicable ADR briefings containing only the **Decision** and **Do's and Don'ts** sections
+- **`checkSummary`** — Automated ADR compliance check results
+
+If `checkSummary.pass === false`, **BLOCK immediately**. Report the check failures and do NOT proceed to manual review — fix violations first.
+
+If no changed files are found (`allChangedFiles` is empty), report APPROVED with no review needed.
+
+### Step 2: Launch Domain Sub-Agents in Parallel
+
+For EACH domain in the `domains` array, launch a sub-agent using the **Agent tool** (`subagent_type: "general-purpose"`, **`model: "haiku"`**). Additionally, **always** launch the General/Process sub-agent. Launch all sub-agents **in parallel** (single message with multiple Agent tool calls).
+
+**WHY Agent tool:** Each sub-agent runs in its own context window. This is critical because sub-agents read every changed file — running them in the parent's context would exhaust it when many files are changed. The Agent tool spawns a separate process, so file reads stay isolated and only the concise compliance report returns to the parent.
+
+**CRITICAL: Always set `model: "haiku"` on every sub-agent Agent call.** This is checklist verification, not complex reasoning — haiku is sufficient and dramatically cheaper.
+
+Each sub-agent receives the pre-packaged data from `archgate review-context`:
+
+1. The `changedFiles` array for its domain
+2. The ADR briefings (Decision + Do's/Don'ts) from the `adrs` array — included directly in the prompt
+3. Instructions to read each changed file and verify against the ADRs
+4. Instructions to return a structured compliance report
+
+**IMPORTANT:** Populate the templates below with actual data from the `archgate review-context` response. Replace `{CHANGED_FILES}` with the file list and `{ADRS_CONTENT}` with the formatted ADR briefings (for each ADR: `### {id}: {title}\n**Decision:** {decision}\n**Do's and Don'ts:**\n{dosAndDonts}`).
+
+#### Sub-Agent: General/Process Review (ALWAYS runs)
+
+<sub_agent_prompt>
+
+```
+You are reviewing code changes for ADR compliance in the General/Process domain.
+
+## Changed Files
+{CHANGED_FILES}
+
+## ADRs to Check Against
+{ADRS_CONTENT}
+
+## Tasks
+1. Read each changed source file and verify it follows the Do's and avoids the Don'ts from applicable ADRs
+2. Check file structure, naming, error handling, output formatting, and dependency compliance
+
+Only check items relevant to the changed files. Skip non-source files (docs, markdown, config).
+
+Before finalizing your report, verify that every violation you listed references a specific ADR ID and includes a concrete fix suggestion.
+
+## CRITICAL: Output Format (STRICT — keep under 30 lines)
+DOMAIN: General/Process
+STATUS: PASS | FAIL | PASS_WITH_WARNINGS
+VIOLATIONS: None | <one line per violation: ADR-ID file:line issue>
+WARNINGS: None | <one line per warning>
+```
+
+</sub_agent_prompt>
+
+#### Sub-Agent: Domain-Specific Review (one per affected domain)
+
+<sub_agent_prompt>
+
+```
+You are reviewing code changes for ADR compliance in the {DOMAIN_NAME} domain.
+
+## Changed Files
+{CHANGED_FILES_FOR_DOMAIN}
+
+## Applicable ADRs
+{DOMAIN_ADRS_CONTENT}
+
+## Tasks
+1. Read each changed source file and verify it follows the Do's and avoids the Don'ts
+2. Check for architectural drift: workarounds bypassing ADR rules, import/dependency violations, naming mismatches
+
+Only check items relevant to the changed files. Skip non-source files.
+
+Before finalizing your report, verify that every violation you listed references a specific ADR ID and includes a concrete fix suggestion.
+
+## CRITICAL: Output Format (STRICT — keep under 30 lines)
+DOMAIN: {DOMAIN_NAME}
+STATUS: PASS | FAIL | PASS_WITH_WARNINGS
+VIOLATIONS: None | <one line per violation: ADR-ID file:line issue fix-suggestion>
+WARNINGS: None | <one line per warning>
+```
+
+</sub_agent_prompt>
+
+### Step 3: Aggregate Results
+
+After ALL sub-agents return, produce a **concise** compliance report (keep under 20 lines total):
+
+```
+## Reviewer: APPROVED | BLOCKED
+- Automated checks: PASS/FAIL (N/N)
+- General/Process: PASS/FAIL
+- {Domain}: PASS/FAIL (one line per domain)
+- Violations: [count] | Warnings: [count]
+[If any violations, list each on one line: ADR-ID file issue fix]
+[If any warnings, list each on one line: ADR-ID file warning-description]
+```
+
+**APPROVED** = all domains PASS or PASS_WITH_WARNINGS and `checkSummary.pass === true`.
+**BLOCKED** = any domain has FAIL status or automated checks failed.
+
+**CRITICAL: Always surface warnings to the user.** When the result is APPROVED with warnings (PASS_WITH_WARNINGS), the user MUST be informed of every warning. Warnings are not blockers, but silently dropping them prevents the user from making informed decisions. List each warning with its ADR ID and description.
+
+**CRITICAL: Keep the final report minimal.** The parent agent needs output budget remaining to invoke the lessons-learned skill after this skill completes. Verbose reports cause the turn to exhaust and drop the lessons-learned invocation.
+
+<example>
+
+```
+## Reviewer: APPROVED
+- Automated checks: PASS (3/3)
+- General/Process: PASS
+- Architecture: PASS_WITH_WARNINGS
+- Violations: 0 | Warnings: 1
+⚠ ARCH-001 src/index.ts — Re-export block also defines a helper inline; not a violation but drifts from the "index only re-exports" pattern.
+```
+
+</example>
+
+## Decision Framework
+
+- **APPROVED**: All automated checks pass AND all domain reviews return PASS or PASS_WITH_WARNINGS. **If any domain returned PASS_WITH_WARNINGS, list every warning in the report** — the user must see them even though they are non-blocking
+- **BLOCKED**: Any automated check fails OR any domain review returns FAIL — provide specific fix suggestions for each violation
+- **ESCALATE**: Change requires an ADR update — the existing rules don't cover this case well. Flag the gap for the lessons-learned skill to capture
+
+## Refusal Policy
+
+If code violates any ADR: identify the violation, reference the ADR ID, provide fix guidance, and **block approval**. ADR compliance is mandatory — no exceptions without documented approval.
+
+## Rules
+
+- ADR violations are **hard blockers** — do not approve non-compliant code
+- Sub-agents MUST receive ADR content directly in their prompts (they cannot run CLI commands)
+- ADRs with `files` globs only apply to matching files
+- When a changed file matches no ADR, note it as an uncovered area (not a violation)
+- Every violation must include: ADR ID, file path, line number (when possible), what's wrong, and how to fix it
+

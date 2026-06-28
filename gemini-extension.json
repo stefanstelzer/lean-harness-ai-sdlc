@@ -1,0 +1,6 @@
+{
+  "name": "lean-harness",
+  "version": "0.1.0",
+  "description": "LEAN AI-SDLC harness: discovery → PRD → plan → TDD → archgate review → PR, as Gemini CLI custom commands (/lean:<skill>) plus harness context.",
+  "contextFileName": "GEMINI.md"
+}

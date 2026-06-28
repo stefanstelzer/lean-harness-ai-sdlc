@@ -11,6 +11,8 @@ the TypeScript library under [`src/`](../src) is the dogfood it ships.
    loop.
 2. **[Source Layout](./source-layout.md)** — a "where do I put X?" tour of the
    repository and the demo library.
+3. **[Distribution](./distribution.md)** — how the harness ships to Claude Code,
+   Gemini CLI and Antigravity from one `.agents/` source, and how to install it.
 
 ## Start here
 

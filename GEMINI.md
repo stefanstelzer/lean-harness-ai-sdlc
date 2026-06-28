@@ -1,3 +1,12 @@
+<!-- GENERATED from AGENTS.md by scripts/build-plugins.mjs — do not edit. -->
+<!-- Edit AGENTS.md and run `npm run build:plugins`. -->
+
+# Gemini CLI context — LEAN AI-SDLC harness
+
+In Gemini CLI the skills below are invoked as `/lean:<name>` (e.g. `/lean:tdd`, `/lean:reviewer`). The full delivery workflow lives in WORKFLOW.md.
+
+---
+
 # AGENTS.md
 
 Operating rules for any AI agent (Claude Code, Cursor, Copilot, Aider, or any

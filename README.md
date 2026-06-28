@@ -111,6 +111,41 @@ as `/goal`, `/tdd`, etc.
 | `/write-better-skill`    | Meta               | How to author skills for this harness (frontmatter, patterns) |
 | `/decide-semver`         | Release            | Read the diff since last tag and may raise the semver floor    |
 
+## Install as a plugin
+
+The 12 skills ship to three agent tools from one canonical source (`.agents/`).
+See [`docs/distribution.md`](./docs/distribution.md) for the full model.
+
+The skills: `discovery`, `goal`, `grill-me-with-context`, `prd-to-plan`, `tdd`,
+`bug-analysis`, `reviewer`, `pr`, `lessons-learned`, `adr-author`,
+`write-better-skill`, `decide-semver`.
+
+### Claude Code
+
+```text
+/plugin marketplace add stefanstelzer/lean-harness-ai-sdlc
+/plugin install lean-harness@lean-harness
+```
+
+Skills appear as `/lean-harness:<skill>`. Run `/lean-harness:init-harness` to
+scaffold the full harness (canonical `.agents/`, archgate ADRs, CI, git hooks)
+into a repo.
+
+### Gemini CLI
+
+```bash
+gemini extensions install https://github.com/stefanstelzer/lean-harness-ai-sdlc
+```
+
+Commands appear as `/lean:<skill>` (e.g. `/lean:tdd`); harness context comes from
+`GEMINI.md`.
+
+### Antigravity
+
+Clone or use this repo as a workspace template — Antigravity reads
+`.agents/skills/` and `AGENTS.md` natively, no packaging required. Add any MCP
+servers via `~/.gemini/config/mcp_config.json` if needed.
+
 ## Architecture governance
 
 Architecture Decision Records (ADRs) live in
@@ -129,7 +164,7 @@ npx -y archgate check --adr GEN-003   # check a specific ADR
 | Domain                  | ADRs                                                                                                                                                                                                                                                |
 | :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Architecture** (ARCH) | `ARCH-001` Layered source architecture (`index.ts` re-exports only; `types` ← impl ← `index` layering)                                                                                                                                              |
-| **General** (GEN)       | `GEN-001` Conventional Commits · `GEN-002` E2E tests in CI · `GEN-003` TypeScript strict · `GEN-004` TDD discipline · `GEN-005` Vitest unit tests · `GEN-006` Manual Test Plan required · `GEN-007` Versioning & release                          |
+| **General** (GEN)       | `GEN-001` Conventional Commits · `GEN-002` E2E tests in CI · `GEN-003` TypeScript strict · `GEN-004` TDD discipline · `GEN-005` Vitest unit tests · `GEN-006` Manual Test Plan required · `GEN-007` Versioning & release · `GEN-008` Generated plugin artefacts                          |
 
 `GEN-006` has no executable rule — it is a manual gate enforced via the PR
 template. New boundaries require a new ADR; author it with `/adr-author`.

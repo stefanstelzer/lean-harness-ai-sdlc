@@ -48,7 +48,9 @@
     "check:skills": "sh scripts/check-skill-symlinks.sh",
     "check:rules": "sh scripts/check-rule-symlinks.sh",
     "check:links": "npm run check:skills && npm run check:rules",
-    "verify": "npm run lint && npm run check:links && npm run archgate:ci && npm test",
+    "build:plugins": "node scripts/build-plugins.mjs",
+    "check:plugins": "sh scripts/check-plugins.sh",
+    "verify": "npm run lint && npm run check:links && npm run check:plugins && npm run archgate:ci && npm test",
     "prepare": "husky"
   },
   "devDependencies": {

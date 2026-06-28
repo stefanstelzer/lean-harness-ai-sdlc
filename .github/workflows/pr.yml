@@ -29,6 +29,9 @@ jobs:
       - name: Symlink checks (skills + rules)
         run: npm run check:links
 
+      - name: Plugin artefact sync
+        run: npm run check:plugins
+
       - name: Archgate compliance
         run: npm run archgate:ci
 

@@ -1,0 +1,37 @@
+# GENERATED from .agents/skills/bug-analysis/ by scripts/build-plugins.mjs — do not edit.
+description = "Investigate a bug to its root cause and a deterministic repro before any fix — reproduce it, isolate the cause, and name the seam where the fix and its test go. Use at the start of the bug flow, or whenever a defect needs diagnosing."
+
+prompt = '''
+# Bug Analysis
+
+The front of the Bug flow (see `WORKFLOW.md`): turn a reported defect into a diagnosis precise enough to drive the fix. Find the **root cause** and a failing **repro**, not a symptom — the repro becomes the first red test when `/tdd` implements the fix. The diagnosis then feeds the prompt and the `/tdd` cycle.
+
+Explore the codebase to answer your own questions; only ask the user what the code and the report cannot tell you.
+
+## 1. Reproduce
+
+Make the defect reproducible and deterministic — the smallest set of steps or inputs that triggers it, and the observed vs. expected behaviour. A bug you cannot reproduce, you cannot prove fixed. Where the defect lives in a module or function, capture the repro as a **failing test at the seam** — that test is what `/tdd` starts red on (`GEN-004`).
+
+**Done when** the bug reproduces on demand and observed vs. expected is written down.
+
+## 2. Find the root cause
+
+Trace from the symptom back to the **seam where behaviour first diverges from intent** — the root cause. Distinguish it from its symptoms: fixing a symptom leaves the bug alive. Read the code on the path and the ADRs that govern it; decide whether this is a contract / validation gap or a logic error.
+
+**Done when** the root cause is located at a named file/seam, not guessed.
+
+## 3. Name the fix seam and scope
+
+Identify the **seam** where the fix and its test belong (prefer the existing, highest seam). State the blast radius — what else travels this code path — and what is in and out of scope for the fix.
+
+**Done when** the fix seam and the scope are explicit.
+
+## 4. Output the diagnosis
+
+Hand the next phase a crisp brief: observed vs. expected, the deterministic repro, the root cause (file/seam), the fix seam, and the scope. The prompt and `/tdd` take it from here — `/tdd` writes the repro as the first failing test, then fixes the root cause.
+
+
+---
+
+User-provided arguments (may be empty): {{args}}
+'''

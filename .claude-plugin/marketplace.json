@@ -1,0 +1,23 @@
+{
+  "name": "lean-harness",
+  "owner": {
+    "name": "Stefan Stelzer",
+    "email": "stefanstelzer1983@googlemail.com"
+  },
+  "description": "LEAN, harness-powered AI-SDLC framework: discovery → PRD → plan → TDD → archgate review → PR, as installable agent skills.",
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "lean-harness",
+      "source": "./plugins/lean-harness",
+      "description": "12 agent skills (discovery, goal, grill-me-with-context, prd-to-plan, tdd, bug-analysis, reviewer, pr, lessons-learned, adr-author, write-better-skill, decide-semver) plus /init-harness to scaffold the full harness.",
+      "category": "workflow",
+      "tags": ["ai-sdlc", "tdd", "archgate", "adr", "workflow", "skills"],
+      "homepage": "https://github.com/stefanstelzer/lean-harness-ai-sdlc",
+      "repository": "https://github.com/stefanstelzer/lean-harness-ai-sdlc",
+      "license": "Apache-2.0"
+    }
+  ]
+}

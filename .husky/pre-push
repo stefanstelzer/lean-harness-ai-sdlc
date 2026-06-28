@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 #
 # Pre-push gate (single package) — mirrors the deep-amber husky v9 hook.
-# Order: skill symlinks -> rule symlinks -> archgate compliance -> Trivy -> tests.
+# Order: symlinks -> plugin artefacts -> archgate compliance -> Trivy -> tests.
 # Abort on the first failure.
 
 echo "=== Skill Symlink Check ==="
@@ -10,6 +10,10 @@ sh scripts/check-skill-symlinks.sh || { echo "❌ Skill symlink check failed. Pu
 echo ""
 echo "=== Rule Symlink Check ==="
 sh scripts/check-rule-symlinks.sh || { echo "❌ Rule symlink check failed. Push aborted."; exit 1; }
+
+echo ""
+echo "=== Plugin Artefact Sync Check ==="
+sh scripts/check-plugins.sh || { echo "❌ Plugin artefacts out of date. Run 'npm run build:plugins'. Push aborted."; exit 1; }
 
 echo ""
 echo "=== Archgate Compliance Check ==="

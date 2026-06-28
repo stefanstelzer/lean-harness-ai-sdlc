@@ -1,0 +1,34 @@
+# GENERATED from .agents/skills/goal/ by scripts/build-plugins.mjs — do not edit.
+description = "Turn a raw requirement, change request, or defect into a sharp, testable goal statement. Use at the front of the Bug or Change-Request flow, or whenever a unit of work needs framing before discovery or planning."
+
+prompt = '''
+# Goal
+
+Frame the **goal** for a unit of work — the first station of the Bug and Change-Request flows (see `WORKFLOW.md`). Turn a vague ask into a single, testable outcome the rest of the flow can build against, before any planning or code.
+
+Explore the codebase to answer your own questions; only ask the user what the code and the request cannot tell you.
+
+## Process
+
+Given the requirement or defect, produce:
+
+1. **Goal** — one sentence, outcome-oriented and user-visible where possible. What is true when this is done that is not true now.
+2. **Acceptance criteria** — a short bullet list, each item independently testable at a public **seam**. These become the behaviours `/tdd` drives red → green.
+3. **Out of scope** — what this work explicitly will not do.
+4. **Open questions** — anything that must be clarified before discovery or planning; resolve what the code answers, surface the rest to the user.
+
+Be ruthless about cutting scope — LEAN means maximising the work _not_ done. If the input is ambiguous and the code cannot settle it, ask before guessing.
+
+**Done when** the goal is one testable sentence, the acceptance criteria are each checkable, and no blocking open question remains.
+
+## Hand-off
+
+- A defect goes to `/bug-analysis` to reproduce and isolate the root cause.
+- A feature or larger change goes to `/discovery` to frame the PRD.
+- A small, well-understood change can go straight to `/tdd`.
+
+
+---
+
+User-provided arguments (may be empty): {{args}}
+'''
