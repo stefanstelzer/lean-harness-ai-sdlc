@@ -1,10 +1,10 @@
 # Default owner for everything in the repo.
-* @stefanstelzer
+* @stefanstelzer @lainet
 
 # The harness itself — extra care on changes to rules, skills and gates.
-/.claude/      @stefanstelzer
-/.husky/       @stefanstelzer
-/scripts/      @stefanstelzer
-/docs/adr/     @stefanstelzer
-/AGENTS.md     @stefanstelzer
-/WORKFLOW.md   @stefanstelzer
+/.claude/      @stefanstelzer @lainet
+/.husky/       @stefanstelzer @lainet
+/scripts/      @stefanstelzer @lainet
+/docs/adr/     @stefanstelzer @lainet
+/AGENTS.md     @stefanstelzer @lainet
+/WORKFLOW.md   @stefanstelzer @lainet
