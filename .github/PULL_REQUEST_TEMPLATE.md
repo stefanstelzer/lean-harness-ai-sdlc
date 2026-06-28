@@ -1,26 +1,25 @@
-<!-- Generated/assisted via the /push-pr skill. See WORKFLOW.md. -->
+<!-- Generated/assisted via the /push-pr skill. See WORKFLOW.md and AGENTS.md. -->
 
-## What & why
+## Summary
 
-<!-- What does this change do, and why? Link the issue/goal. -->
+<!-- 1-3 sentences: what changed and why. Link the issue/goal it closes. -->
 
 Closes #
 
-## Flow
+## Commits
 
-- [ ] Feature
-- [ ] Bug
-- [ ] Change request
+<!--
+For multi-commit branches, create this PR with `gh pr create --fill-verbose`
+so this section is auto-populated from each commit's subject and body
+(`--fill` for a single commit). See AGENTS.md -> "PR Descriptions".
+-->
 
-## Checklist (archgate)
+## Manual Test Plan
 
-- [ ] Acceptance criteria / failing-test-for-bug are met
-- [ ] Tests added or updated (unit / smoke / e2e as appropriate)
-- [ ] `npm run verify` is green (lint + archgate + tests)
-- [ ] Trivy scan is clean (no HIGH/CRITICAL vulns or secrets)
-- [ ] ADR added/updated if an architectural decision was made (`docs/adr/`)
-- [ ] Commits follow Conventional Commits
+<!--
+At least one concrete, human-executable verification step is REQUIRED
+(GEN-006). Placeholders like `<step>` or `TODO` are not acceptable — the
+/push-pr skill checks this before declaring the PR done.
+-->
 
-## Notes for reviewers
-
-<!-- Anything that helps review: risks, trade-offs, follow-ups. -->
+- [ ] Run `npm run verify` locally and confirm lint, symlink checks, archgate and tests all pass.

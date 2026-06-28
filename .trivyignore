@@ -1,0 +1,8 @@
+# Trivy Ignore File
+# Add CVE / vulnerability IDs here to suppress known or accepted findings.
+# One entry per line. Comments start with '#'.
+#
+# Example:
+# CVE-2024-12345
+#
+# No findings are currently ignored.

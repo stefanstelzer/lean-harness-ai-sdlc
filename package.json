@@ -43,8 +43,12 @@
     "test:smoke": "vitest run tests/smoke",
     "test:e2e": "vitest run tests/e2e",
     "test:coverage": "vitest run --coverage",
-    "archgate": "node scripts/archgate.mjs",
-    "verify": "npm run lint && npm run archgate && npm run test",
+    "archgate": "npx -y archgate check",
+    "archgate:ci": "node scripts/archgate-ci.mjs",
+    "check:skills": "sh scripts/check-skill-symlinks.sh",
+    "check:rules": "sh scripts/check-rule-symlinks.sh",
+    "check:links": "npm run check:skills && npm run check:rules",
+    "verify": "npm run lint && npm run check:links && npm run archgate:ci && npm test",
     "prepare": "husky"
   },
   "devDependencies": {

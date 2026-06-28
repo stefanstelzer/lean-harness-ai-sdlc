@@ -1,0 +1,1 @@
+../../.agents/rules/general-adrs.md

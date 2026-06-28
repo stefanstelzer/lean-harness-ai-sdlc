@@ -4,15 +4,15 @@
 
 ### LEAN & harness-powered AI Software Development Lifecycle
 
-A batteries-included **framework of skills, hooks, rules and pipelines** for
+A batteries-included **framework of skills, rules, hooks and pipelines** for
 shipping software with AI agents — plus a runnable TypeScript demo that the
 harness lints, tests, scans and ships on every change.
 
 <br />
 
-[![Push Pipeline](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/push-pipeline.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/push-pipeline.yml)
-[![PR Pipeline](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/pr-pipeline.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/pr-pipeline.yml)
-[![Nightly E2E](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/nightly-e2e.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/nightly-e2e.yml)
+[![Push](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/push.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/push.yml)
+[![PR](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/pr.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/pr.yml)
+[![Nightly](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/nightly.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/nightly.yml)
 [![codecov](https://codecov.io/gh/stefanstelzer/lean-harness-ai-sdlc/branch/main/graph/badge.svg)](https://codecov.io/gh/stefanstelzer/lean-harness-ai-sdlc)
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
@@ -27,7 +27,7 @@ harness lints, tests, scans and ships on every change.
 [![GitHub issues](https://img.shields.io/github/issues/stefanstelzer/lean-harness-ai-sdlc.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/issues)
 [![GitHub stars](https://img.shields.io/github/stars/stefanstelzer/lean-harness-ai-sdlc.svg?style=social)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/stargazers)
 
-[Workflow](./WORKFLOW.md) · [Agent rules](./AGENTS.md) · [Methodology](./docs/methodology.md) · [Contributing](./CONTRIBUTING.md) · [ADRs](./docs/adr/)
+[Workflow](./WORKFLOW.md) · [Agent rules](./AGENTS.md) · [Methodology](./docs/methodology.md) · [Docs](./docs/README.md) · [Contributing](./CONTRIBUTING.md) · [ADRs](./.archgate/adrs/)
 
 </div>
 
@@ -40,51 +40,117 @@ with AI agents**. It pairs two ideas:
 
 - **LEAN** — maximize the work _not_ done, build quality in, deliver fast in
   small batches, and keep a tight feedback loop.
-- **Harness** — a concrete set of _skills_ (slash commands), _rules_ (ADRs &
-  `AGENTS.md`), _hooks_ (git + CI gates) and _pipelines_ that keep agents on the
-  rails so velocity never costs you correctness or architecture.
+- **Harness** — a concrete set of _skills_, _rules_ (ADRs & `AGENTS.md`), _hooks_
+  (git + CI gates) and _pipelines_ that keep agents on the rails so velocity
+  never costs you correctness or architecture.
 
-Three flows cover the bulk of day-to-day work — **Change Request**, **Bug** and
-**Feature** — each running the same stations from intent to merged PR.
+Three flows cover the bulk of day-to-day work — **Feature**, **Bug** and
+**Change-Request** — each running the same delivery spine from intent to merged
+PR (`Agent → Artefact → Commit → Hooks → Push → PR`). The harness is
+**human-in-the-loop and non-subagentic** by design: a human drives and reviews
+every stage. See [WORKFLOW.md](./WORKFLOW.md).
 
 > The methodology _is_ the product. The TypeScript package under `src/` is the
 > dogfood: a tiny feature-flag library the harness uses to prove every gate
 > actually runs and stays green.
 
-## The Feature flow
+## Repository layout
 
-![Feature flow](./docs/assets/flow-feature.png)
+```text
+.
+├── .agents/                 # tool-agnostic single source of truth for the harness
+│   ├── skills/<name>/        #   12 agent skills (SKILL.md + sub-docs)
+│   └── rules/<name>.md        #   workspace rules (ADR routers + style)
+├── .claude/                 # per-tool view of the harness
+│   ├── skills/<name>  ───────►  symlink → ../../.agents/skills/<name>
+│   ├── rules/<name>.md ──────►  symlink → ../../.agents/rules/<name>.md
+│   └── agent-memory/          #   durable learnings written by /lessons-learned
+├── .archgate/               # architecture governance
+│   ├── adrs/                  #   ADRs (<ID>-<slug>.md + <ID>-<slug>.rules.ts)
+│   ├── lint/                  #   archgate lint helpers
+│   └── rules.d.ts             #   generated rule type defs
+├── scripts/                 # symlink checks, archgate-ci, semver-floor, trivy
+├── src/                     # demo TypeScript library (the dogfood)
+│   ├── index.ts              #   public surface — re-exports only (ARCH-001)
+│   ├── feature-flags.ts      #   implementation
+│   └── types.ts              #   lowest layer — no internal imports
+├── tests/                   # unit / smoke / e2e suites (Vitest)
+├── prd/                     # PRDs written by /discovery (PRD-<n>-<slug>.md)
+├── plans/                   # plans written by /prd-to-plan (PLN-<n>-<slug>.md)
+├── docs/                    # methodology, docs index, source layout
+├── .husky/                  # commit-msg + pre-push git hooks
+├── .github/                 # CI workflows, rulesets, issue/PR templates
+├── skills-lock.json         # lockfile for externally-vendored skills
+├── AGENTS.md                # rules every agent must follow (read first)
+├── WORKFLOW.md              # the three flows in detail
+└── README.md                # you are here
+```
 
-> Change Request and Bug flows follow the same shape — see
-> [WORKFLOW.md](./WORKFLOW.md) for all three with their swimlanes.
+Skills and rules have a **single source of truth** under `.agents/`; `.claude/`
+holds only symlinks into it, so every agent tool sees the same set with no copy
+drift. `scripts/check-skill-symlinks.sh` and `scripts/check-rule-symlinks.sh`
+(`npm run check:links`) enforce this in the pre-push hook and CI.
 
-## The harness at a glance
+## Skills
 
-| Layer         | Artifacts                                                                                                                     |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Skills**    | `/goal` `/discovery` `/grill-me-with-context` `/prd-to-plan` `/tdd` `/reviewer` `/lessons-learned` `/push-pr` `/bug-analysis` |
-| **Rules**     | ADRs (`docs/adr/`), `AGENTS.md`                                                                                               |
-| **Docs**      | `README.md`, `WORKFLOW.md`, `AGENTS.md`                                                                                       |
-| **Tests**     | Unit · Smoke · Nightly E2E                                                                                                    |
-| **Pipeline**  | Pre-push · Push pipeline · PR pipeline                                                                                        |
-| **Git hooks** | `commit-msg` (Conventional Commits) · `pre-push` (Archgate → Trivy → Unit tests)                                              |
+The 12 skills live under [`.agents/skills/`](./.agents/skills/) and are invoked
+as `/goal`, `/tdd`, etc.
 
-### Skills (slash commands)
+| Skill                    | Flow station        | Purpose                                                        |
+| ------------------------ | ------------------- | ------------------------------------------------------------- |
+| `/discovery`             | Feature front       | Explore the problem, frame scope, write `prd/PRD-<n>-<slug>.md` |
+| `/goal`                  | Bug / CR front      | Sharpen a request or defect into a testable goal statement    |
+| `/grill-me-with-context` | PRD / Plan review   | Pressure-test a PRD/plan against the codebase + ADRs          |
+| `/prd-to-plan`           | Plan                | Turn an approved PRD into `plans/PLN-<n>-<slug>.md`           |
+| `/tdd`                   | Agent / Artefact    | Implement via strict red-green-refactor; lands the spec first |
+| `/bug-analysis`          | Bug investigation   | Reproduce, isolate root cause, write a failing test first     |
+| `/reviewer`              | Commit (archgate)   | Gate the diff on correctness, architecture, tests             |
+| `/pr`                    | Commit → PR         | Commit, push, open the PR with `--fill-verbose`, drive CI green |
+| `/lessons-learned`       | Commit (archgate)   | Feed retrospective insight back into ADRs / agent-memory      |
+| `/adr-author`            | PRD review          | Write/amend ADRs in `.archgate/adrs/` (+ optional rules)      |
+| `/write-better-skill`    | Meta               | How to author skills for this harness (frontmatter, patterns) |
+| `/decide-semver`         | Release            | Read the diff since last tag and may raise the semver floor    |
 
-The skills live in [`.claude/commands/`](./.claude/commands/) and are usable in
-Claude Code as `/goal`, `/tdd`, etc.
+## Architecture governance
 
-| Skill                    | Flow station      | Purpose                                             |
-| ------------------------ | ----------------- | --------------------------------------------------- |
-| `/goal`                  | Requirement       | Sharpen a request into a testable goal              |
-| `/discovery`             | Discovery         | Explore the problem space before solutioning        |
-| `/grill-me-with-context` | Requirements eng. | Interrogate the human for missing context           |
-| `/prd-to-plan`           | Plan              | Turn a PRD/context into a step-by-step plan         |
-| `/tdd`                   | Agent / Artifact  | Implement via strict red-green-refactor             |
-| `/reviewer`              | Review (archgate) | Gate the diff on correctness, architecture, tests   |
-| `/push-pr`               | Push / PR         | Run gates, push, open the PR                        |
-| `/lessons-learned`       | Review (archgate) | Feed retrospective insight back into the harness    |
-| `/bug-analysis`          | Bug investigation | Reproduce, isolate root cause, write a failing test |
+Architecture Decision Records (ADRs) live in
+[`.archgate/adrs/`](./.archgate/adrs/) and are enforced by
+[archgate](https://cli.archgate.dev/) on every push and in CI. Each ADR is a
+`<ID>-<slug>.md` (with YAML frontmatter: `id`, `title`, `status`, `domain`,
+`rules`) usually paired with an executable `<ID>-<slug>.rules.ts`. The `*-adrs`
+agent rules read the `*.md` files at runtime rather than duplicating them.
+
+```bash
+npm run archgate                 # run ADR compliance checks (also in pre-push + CI)
+npx -y archgate adr list         # list all ADRs
+npx -y archgate check --adr GEN-003   # check a specific ADR
+```
+
+| Domain                  | ADRs                                                                                                                                                                                                                                                |
+| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Architecture** (ARCH) | `ARCH-001` Layered source architecture (`index.ts` re-exports only; `types` ← impl ← `index` layering)                                                                                                                                              |
+| **General** (GEN)       | `GEN-001` Conventional Commits · `GEN-002` E2E tests in CI · `GEN-003` TypeScript strict · `GEN-004` TDD discipline · `GEN-005` Vitest unit tests · `GEN-006` Manual Test Plan required · `GEN-007` Versioning & release                          |
+
+`GEN-006` has no executable rule — it is a manual gate enforced via the PR
+template. New boundaries require a new ADR; author it with `/adr-author`.
+
+## Versioning & release
+
+Conventional Commits (`GEN-001`) drive automatic versioning. On merge to `main`,
+[`release.yml`](./.github/workflows/release.yml):
+
+1. computes a **deterministic semver floor** from the commits since the last
+   `v*` tag (`scripts/semver-floor.mjs`): `fix:` → patch, `feat:` → minor,
+   `<type>!:` / `BREAKING CHANGE` → major;
+2. optionally runs `/decide-semver` headless (if `ANTHROPIC_API_KEY` is set),
+   which may **raise** — never lower — the floor;
+3. bumps `package.json`, cuts a `vX.Y.Z` tag + GitHub Release, and pushes one
+   `chore(release): bump … [skip ci]` commit (the sole exception to the
+   never-commit-to-`main` rule; see `GEN-007`).
+
+`skills-lock.json` (`{ "version": 1, "skills": {} }`) is the lockfile for any
+externally-vendored skills. All skills here are authored locally, so it is empty;
+the mechanism is present for the future.
 
 ## Quickstart
 
@@ -96,11 +162,12 @@ nvm use
 npm install            # runs "prepare" → installs husky hooks
 
 # 3. Run the local gate (what pre-push enforces)
-npm run verify         # lint + archgate + tests
+npm run verify         # lint + symlink checks + archgate + tests
 
 # Individual gates
 npm run lint
-npm run archgate       # architecture-fitness check (see docs/adr/)
+npm run check:links    # skill + rule symlink invariants
+npm run archgate       # architecture-fitness check (see .archgate/adrs/)
 npm test               # unit + smoke + e2e
 npm run test:coverage
 ```
@@ -117,28 +184,16 @@ const flags = new FeatureFlags([
 flags.isEnabled('new-checkout', { userId: 'user-42' }); // deterministic per user
 ```
 
-## Repository layout
+## Use this repo as a template
 
-```text
-.claude/commands/   # the 9 skills (slash commands)
-.husky/             # commit-msg + pre-push git hooks
-scripts/            # archgate.mjs (arch gate) + run-trivy.sh (security scan)
-src/                # demo TypeScript library (the dogfood)
-tests/              # unit / smoke / e2e suites
-docs/               # methodology, ADRs, flow diagrams
-.github/            # CI pipelines, issue/PR templates, community files
-WORKFLOW.md         # the three flows in detail
-AGENTS.md           # rules every agent must follow
-```
-
-## Adopting the harness in your own repo
-
-1. Copy `.claude/commands/`, `.husky/`, `scripts/`, `docs/adr/`, `AGENTS.md` and
-   `WORKFLOW.md` into your project.
+1. Copy `.agents/`, `.claude/` (with its symlinks), `.archgate/`, `.husky/`,
+   `scripts/`, `.github/`, `AGENTS.md` and `WORKFLOW.md` into your project.
 2. Wire the gates into your `package.json` scripts and `.github/workflows/`.
 3. Point the badges and links at your own `owner/repo` slug.
-4. Start every change at `/goal` (or `/discovery` / `/bug-analysis`) and follow
-   the flow to a green PR.
+4. Replace the `src/` demo library with your code; keep the ADR set (adapt the
+   `*.rules.ts` to your structure) so the archgate stays meaningful.
+5. Start every change at `/discovery` (feature), `/bug-analysis` (bug) or
+   `/goal` (change request) and follow the flow to a green PR.
 
 ## Contributing
 

@@ -17,23 +17,26 @@ turns into:
 
 ## LEAN principles applied to an agentic SDLC
 
-| LEAN principle             | How it shows up here                                              |
-| -------------------------- | ----------------------------------------------------------------- |
-| Eliminate waste            | `/goal` cuts scope; "maximize the work not done" is rule #2.      |
-| Build quality in           | TDD (`/tdd`); the archgate, Trivy and tests gate every push.      |
-| Amplify learning           | `/lessons-learned` turns each change into durable rules/ADRs.     |
-| Decide as late as possible | Discovery & ADRs defer commitment until the trade-offs are clear. |
-| Deliver fast               | Small batches, short flows, automated gates → quick green PRs.    |
-| Respect people             | Humans own intent & review; agents own the mechanical grind.      |
-| Optimize the whole         | One flow from intent to merge, not local per-step optimisation.   |
+| LEAN principle             | How it shows up here                                                  |
+| -------------------------- | -------------------------------------------------------------------- |
+| Eliminate waste            | `/goal` and `/discovery` cut scope; "maximize the work not done" is rule #2. |
+| Build quality in           | TDD (`/tdd`); the archgate, Trivy and tests gate every push (`GEN-004`, `GEN-005`). |
+| Amplify learning           | `/lessons-learned` turns each change into durable rules/ADRs (via `/adr-author`). |
+| Decide as late as possible | Discovery & ADRs defer commitment until the trade-offs are clear.    |
+| Deliver fast               | Small batches, short flows, automated gates → quick green PRs.       |
+| Respect people             | Humans own intent & review (HITL); agents own the mechanical grind.   |
+| Optimize the whole         | One flow from intent to merge, not local per-step optimisation.      |
 
 ## What "harness" means
 
 A harness is everything that keeps a fast agent on the rails:
 
-- **Skills** — repeatable, named procedures (`.claude/commands/`) so each station
-  is executed the same way every time.
-- **Rules** — `AGENTS.md` (how to work) and ADRs (what was decided).
+- **Skills** — repeatable, named procedures in [`.agents/skills/`](../.agents/skills/)
+  (the single source of truth; `.claude/skills/` are symlinks into it) so each
+  station is executed the same way every time.
+- **Rules** — `AGENTS.md` (how to work) plus the workspace rules in
+  [`.agents/rules/`](../.agents/rules/) that route to the binding ADRs in
+  [`.archgate/adrs/`](../.archgate/adrs/) (what was decided).
 - **Hooks & pipelines** — automated gates (`commit-msg`, `pre-push`, CI) that
   make the right thing the easy thing and the wrong thing impossible to merge.
 - **Tests** — the executable specification: unit for logic, smoke for the public
@@ -44,7 +47,7 @@ A harness is everything that keeps a fast agent on the rails:
 ```text
 intent → plan → implement (TDD) → gate (archgate/Trivy/tests) → review → merge
    ↑                                                                      │
-   └──────────────────── lessons-learned feeds the harness ◄─────────────┘
+   └──────────────── lessons-learned feeds the harness ◄─────────────────┘
 ```
 
 The loop is deliberately tight: a failing gate stops the change _before_ it
@@ -54,8 +57,10 @@ recur. The harness gets stronger with every change that runs through it.
 ## Why three flows
 
 Most work is one of: a **feature** (needs discovery), a **bug** (needs root-cause
+plus a regression test), or a **change request** (scoped, understood). Matching
+the ceremony to the work avoids both under- and over-process — itself a LEAN
+move. The Bug and Change-Request flows share the Feature flow's delivery spine
+and differ only in their lighter front phases.
 
-- a regression test), or a **change request** (scoped, understood). Matching the
-  ceremony to the work avoids both under- and over-process — itself a LEAN move.
-
-See [WORKFLOW.md](../WORKFLOW.md) for the station-by-station detail.
+See [WORKFLOW.md](../WORKFLOW.md) for the station-by-station detail and
+[source-layout.md](./source-layout.md) for where code lives.

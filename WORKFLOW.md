@@ -1,134 +1,370 @@
-# Workflow
+# Development Workflow
 
-This project runs on three flows that share the same stations from intent to a
-merged pull request. Each flow moves left-to-right across the same lanes:
+This document describes the recommended **human-in-the-loop (HITL),
+non-subagentic** workflow for delivering changes in this repository. A human
+drives and reviews every stage; skills assist, but no autonomous subagent owns a
+stage end-to-end.
 
-```text
-Requirement/Bug/Discovery → Prompt/PRD → Plan → Agent → Artifact → Commit
-                                                                    ║ Hooks
-                                                                    ↓
-                                                          Push → PR → Merge
+There are three entry points — **Feature**, **Bug**, and **Change-Request** —
+that all converge on the same delivery **spine**:
+
+```
+Agent → Artefact → Commit ┃ Hooks → Push → PR
 ```
 
-### The lanes
+The `┃` marks the **local/remote boundary**: everything up to and including
+Commit happens on the developer's machine; from the pre-push hook onward the work
+crosses into shared CI. Two iteration loops keep the work honest:
 
-| Lane          | What happens                                                                       |
-| ------------- | ---------------------------------------------------------------------------------- |
-| **Human**     | Requirements engineering, prompt engineering, refactoring, review.                 |
-| **Skills**    | Slash commands that drive each station (`/goal`, `/tdd`, `/reviewer`, …).          |
-| **Rules**     | ADRs (`docs/adr/`) and `AGENTS.md` constrain how agents work.                      |
-| **Documents** | `AGENTS.md`, `WORKFLOW.md`, `README.md` keep humans and agents aligned.            |
-| **Tests**     | Unit tests per change; full suite (unit + integration + smoke) on PR; nightly e2e. |
-| **Pipeline**  | Pre-push (local) → Push pipeline → PR pipeline.                                    |
-| **Git**       | Branch → pre-push hook (Archgate + Trivy + unit) → push.                           |
+- **Inner loop** `Agent ⇄ Artefact ⇄ Commit` — implement, test, refine until the
+  slice is green.
+- **Outer loop** `PR → Agent` — review feedback re-enters implementation.
 
-The original swimlane diagrams are in [`docs/assets/`](./docs/assets/)
-(`flow-change-request.png`, `flow-bug.png`, `flow-feature.png`).
-
----
-
-## 1. Feature flow
-
-The full flow, used when building something new. Discovery and review gates make
-it the most thorough of the three.
-
-![Feature flow](./docs/assets/flow-feature.png)
+## Overview
 
 ```mermaid
 flowchart LR
-  D[Discovery] --> PRD[PRD] --> P[Plan] --> A[Agent] --> AR[Artifact] --> C[Commit] --> PU[Push] --> PR[PR]
+  classDef front fill:#e3f2fd,stroke:#1976d2,color:#0d47a1;
+  classDef bug fill:#ffebee,stroke:#e53935,color:#b71c1c;
+  classDef chg fill:#fffde7,stroke:#f9a825,color:#f57f17;
+  classDef spine fill:#e8f5e9,stroke:#43a047,color:#1b5e20;
+  classDef gate fill:#fff3e0,stroke:#fb8c00,color:#e65100;
+  classDef rel fill:#fce4ec,stroke:#d81b60,color:#880e4f;
 
-  subgraph Skills
-    s1["/discovery"] --> s2["/grill-me-with-context"] --> s3["/prd-to-plan"] --> s4["/tdd"] --> s5["/reviewer (archgate)"] --> s6["/lessons-learned (archgate)"]
+  subgraph FE["🟦 Feature front"]
+    direction TB
+    d1["Discovery<br/>/discovery"] --> d2["PRD<br/>/grill-me-with-context"]
+    d2 --> d3["Plan<br/>/prd-to-plan"]
   end
+  subgraph BG["🟥 Bug front"]
+    direction TB
+    b1["Bug<br/>/bug-analysis"] --> b2["Prompt<br/>/goal"]
+  end
+  subgraph CR["🟨 Change-Request front"]
+    direction TB
+    c1["Requirement"] --> c2["Prompt<br/>/goal"]
+  end
+
+  d3 --> A
+  b2 --> A
+  c2 --> A
+
+  subgraph SPINE["🟩 Shared delivery spine"]
+    direction LR
+    A["Agent<br/>/tdd"] --> AR["Artefact<br/>refactor"]
+    AR --> CO["Commit<br/>/reviewer · /lessons-learned · /pr"]
+    CO -.->|"local ┃ remote"| HK["Hooks<br/>pre-push"]
+    HK --> PU["Push<br/>push.yml"]
+    PU --> PR["PR<br/>pr.yml · review"]
+  end
+
+  A -.->|"inner loop"| AR
+  AR -.->|"inner loop"| A
+  PR -.->|"outer rework loop"| A
+  PR ==>|"merge to main"| REL["Release<br/>release.yml"]
+
+  class d1,d2,d3 front;
+  class b1,b2 bug;
+  class c1,c2 chg;
+  class A,AR,CO spine;
+  class HK,PU,PR gate;
+  class REL rel;
 ```
 
-**Stations**
+> The same diagram as a presentation deck lives in
+> [`docs/assets/ai_sdlc.pdf`](docs/assets/ai_sdlc.pdf); rendered per-flow boards
+> are in [`docs/assets/`](docs/assets/) (`flow-feature.png`, `flow-bug.png`,
+> `flow-change-request.png`). This document is authoritative.
 
-1. **Discovery** (`/discovery`) — explore the problem before solutioning.
-2. **PRD** (`/grill-me-with-context` → `/prd-to-plan`) — capture context, then a plan.
-3. **Plan → Agent → Artifact** (`/tdd`) — implement in red-green-refactor cycles.
-4. **Commit** — Conventional Commits; the `commit-msg` hook enforces the format.
-5. **Review** (`/reviewer`, then `/lessons-learned`) — archgate the diff; feed
-   insight back into rules/ADRs/skills.
-6. **Push → PR** (`/push-pr`) — pre-push gate runs, then the PR pipeline runs the
-   full suite.
+## The lanes
 
-## 2. Bug flow
+Every phase is described across the same lanes:
 
-Optimized for a fast, disciplined fix with a regression guard.
+| Lane          | Meaning                                                                 |
+| ------------- | ---------------------------------------------------------------------- |
+| **Phase**     | The step in the flow (left → right).                                   |
+| **Skills**    | The skill that assists the phase (`.agents/skills/<name>/`, run as `/<name>`). |
+| **Key ADRs**  | Binding constraints — the ADRs in `.archgate/adrs/`, routed via `.agents/rules/*-adrs.md`. |
+| **Documents** | Project docs that inform or are updated in the phase.                  |
+| **Tests**     | The automated tests that run.                                         |
+| **Pipeline**  | The CI/hook stage that gates the phase.                                |
+| **Git**       | The git action (branch, pre-push, push).                              |
 
-![Bug flow](./docs/assets/flow-bug.png)
+## Feature flow
+
+The Feature flow is the full flow; Bug and Change-Request are documented as
+variants below. `/pr` spans **Commit → Hooks → Push → PR** (it commits, pushes,
+opens the PR, and drives CI green).
+
+```mermaid
+flowchart TD
+  classDef front fill:#e3f2fd,stroke:#1976d2,color:#0d47a1;
+  classDef build fill:#e8f5e9,stroke:#43a047,color:#1b5e20;
+  classDef gate fill:#fff3e0,stroke:#fb8c00,color:#e65100;
+  classDef doc fill:#f3e5f5,stroke:#8e24aa,color:#4a148c;
+  classDef rel fill:#fce4ec,stroke:#d81b60,color:#880e4f;
+
+  start(["Need identified"]) --> P1
+
+  subgraph FRONT["Frame the work"]
+    direction TB
+    P1["1 · Discovery<br/>/discovery"] --> P2["2 · PRD<br/>/grill-me-with-context → /adr-author"]
+    P2 --> P3["3 · Plan<br/>/prd-to-plan → /grill-me-with-context"]
+  end
+
+  P1 -.-> docPRD["📄 prd/PRD-n-slug.md"]
+  P3 -.-> docPLN["📄 plans/PLN-n-slug.md"]
+  P3 -->|"open feat/ branch · spec = first commit"| P4
+
+  subgraph BUILD["Build · inner loop  (red → green → refactor)"]
+    direction LR
+    P4["4 · Agent<br/>/tdd · red → green"] <-->|"refine"| P5["5 · Artefact<br/>refactor while green"]
+  end
+  P5 --> P6["6 · Commit<br/>/reviewer → /lessons-learned → /pr"]
+
+  P6 -.->|"local ┃ remote"| G7{{"7 · Hooks · pre-push<br/>symlinks · archgate · trivy · tests"}}
+  G7 -->|"fail"| P4
+  G7 -->|"pass"| G8{{"8 · Push · push.yml<br/>lint · check:links · archgate:ci · build · test"}}
+  G8 --> P9["9 · PR<br/>/pr · pr.yml · human review"]
+  P9 -->|"changes requested"| P4
+  P9 ==>|"approved · merge to main"| REL(["release.yml"])
+
+  class P1,P2,P3 front;
+  class P4,P5 build;
+  class G7,G8 gate;
+  class docPRD,docPLN doc;
+  class REL rel;
+```
+
+| #   | Phase     | Skills                                                  | Key ADRs                                  | Documents                          | Tests                          | Pipeline                  | Git                                  |
+| --- | --------- | ------------------------------------------------------ | ----------------------------------------- | ---------------------------------- | ------------------------------ | ------------------------- | ------------------------------------ |
+| 1   | Discovery | `/discovery`                                           | `*-adrs` (read); English-only             | writes `prd/PRD-<n>-<slug>.md`     | —                              | —                         | —                                    |
+| 2   | PRD       | `/grill-me-with-context` → `/adr-author`               | all `*-adrs`                              | `AGENTS.md`, `WORKFLOW.md`, `README.md` | —                          | —                         | —                                    |
+| 3   | Plan      | `/prd-to-plan`, then `/grill-me-with-context`          | `*-adrs`; `GEN-006` per phase             | writes `plans/PLN-<n>-<slug>.md`   | —                              | —                         | —                                    |
+| 4   | Agent     | `/tdd` (red → green)                                    | `GEN-004`, `GEN-005`, `GEN-003`, `ARCH-001` | PRD + plan                        | **Unit** (`tests/unit/`)       | —                         | opens `feat/<slug>`; **spec = first commit** |
+| 5   | Artefact  | `/tdd` (refactor while green)                           | `ARCH-001`, area ADRs                      | updated docs                       | Unit                           | —                         | —                                    |
+| 6   | Commit    | `/reviewer` → `/lessons-learned` → `/pr` (commit)      | archgate = all ADRs; `GEN-001`            | ADRs / agent-memory                | Unit                           | local archgate            | Conventional-Commits commit          |
+| 7   | Hooks     | `/pr` (push fires the hook)                             | symlink invariants, archgate, `GEN-005`   | —                                  | Unit                           | `.husky/pre-push`         | pre-push gate                        |
+| 8   | Push      | `/pr`                                                   | `GEN-002`, `GEN-005`                       | —                                  | Unit · Smoke (`tests/smoke/`)  | `push.yml`                | branch pushed                        |
+| 9   | PR        | `/pr` + human review                                    | `AGENTS.md` PR Descriptions, `GEN-006`     | PR body (Summary/Commits/Manual Test Plan) | e2e on `nightly.yml`   | `pr.yml`                  | PR opened, merged on green           |
+
+Support skills outside the loop: `/write-better-skill` (when authoring skills),
+`/adr-author` (invoked by `/grill-me-with-context` to write decisions back as
+ADRs), and `/decide-semver` (run headless by `release.yml`, see Versioning).
+
+### 1. Discovery
+
+- **Goal:** Frame the problem and gather requirements before any solution shape.
+- **Human:** Requirements engineering — clarify the need, scope, and constraints.
+- **Skill:** `/discovery` — explores the problem space, finds test seams, and
+  writes a PRD to `prd/PRD-<n>-<slug>.md`.
+- **Done when:** The problem, scope, and success criteria are written down and
+  agreed.
+
+### 2. PRD
+
+- **Goal:** Turn discovery into a Product Requirements Document.
+- **Skill:** `/grill-me-with-context` — adversarially pressure-test the PRD
+  against the codebase and the ADRs; invoke `/adr-author` to record any
+  architectural decision back as an ADR before acceptance.
+- **Documents:** `AGENTS.md`, `WORKFLOW.md`, `README.md` are the context the PRD
+  must stay consistent with.
+- **Done when:** The PRD survives the grilling and the human approves it.
+
+### 3. Plan
+
+- **Goal:** Derive an executable implementation plan from the approved PRD.
+- **Skills:** `/prd-to-plan` (generate the plan into `plans/PLN-<n>-<slug>.md`),
+  then `/grill-me-with-context` (pressure-test it).
+- **Done when:** The plan is reviewed, grilled, and approved.
+
+### 4. Agent (implement)
+
+- **Goal:** Implement the plan on a feature branch.
+- **Skill:** `/tdd` — write the failing test first, then minimal implementation
+  (red → green), in vertical slices.
+- **Tests:** **Unit tests** run continuously while implementing (`npm run test:unit`).
+- **Git:** `/tdd` **opens the feature branch off `main`** and lands the PRD +
+  plan as its **first commit** before any production code (never commit to `main`
+  — see `AGENTS.md` › Branch Policy).
+- **Loop:** Iterates with **Artefact** and **Commit** until the slice is green.
+
+### 5. Artefact
+
+- **Goal:** The concrete output — code, tests, and any updated docs.
+- **Human:** **Refactoring** — tidy the artefact for clarity and reuse (while the
+  suite stays green) before it is committed.
+- **Loop:** Feeds back into **Agent** as needed.
+
+### 6. Commit
+
+- **Goal:** Record a coherent, reviewed change locally.
+- **Skills (in order):** `/reviewer` — local archgate review of the diff;
+  `/lessons-learned` — capture learnings into `.claude/agent-memory/` and/or ADRs;
+  **then** `/pr` commits the work (Conventional Commits). `/pr` always runs after
+  `/reviewer` and `/lessons-learned`.
+- **Boundary:** This is the last local step before the work crosses into CI.
+- **Done when:** The diff passes the local reviewer, learnings are captured, and
+  the change is committed with a Conventional-Commits message.
+
+### 7. Hooks (pre-push)
+
+- **Goal:** Gate the push locally before it reaches CI.
+- **Pipeline / Git:** `/pr`'s push fires the Husky **pre-push** hook
+  (`.husky/pre-push`), which runs, in order: skill & rule symlink checks →
+  **Archgate** compliance (`scripts/archgate-ci.mjs`) → **Trivy** security scan →
+  **unit tests** (`npm test`). It aborts on the first failure.
+- **Done when:** Every pre-push gate is green; otherwise the push is aborted.
+
+### 8. Push
+
+- **Goal:** Publish the branch and run the shared pipeline.
+- **Skill:** `/pr` pushes the branch.
+- **Pipeline:** **Push pipeline** ([`push.yml`](.github/workflows/push.yml)):
+  install → lint → check:links → archgate:ci → trivy → build → test.
+- **Tests:** Unit + smoke suites under Vitest.
+- **Done when:** The push pipeline is green.
+
+### 9. PR
+
+- **Goal:** Get the change reviewed and merged.
+- **Skill:** `/pr` — opens the PR (`AGENTS.md` › PR Descriptions) and watches the
+  run, fixing **root causes** until every required check is green. It invokes
+  `/lessons-learned` along the way.
+- **Human:** **Review** — the human reviews the PR; feedback loops back to
+  **Agent** (outer rework loop).
+- **Pipeline:** **PR pipeline** ([`pr.yml`](.github/workflows/pr.yml)); the
+  **nightly** pipeline ([`nightly.yml`](.github/workflows/nightly.yml)) runs the
+  full suite incl. **e2e** (`tests/e2e/`, `GEN-002`) on a schedule.
+- **Constraints:** The PR body MUST follow `AGENTS.md` › PR Descriptions and the
+  `GEN-006` Manual Test Plan rule.
+- **Done when:** Reviewed, all required checks green, and merged. On merge to
+  `main`, `release.yml` cuts the version (see Versioning).
+
+## Variants
+
+The Bug and Change-Request flows reuse the **same delivery spine** as the Feature
+flow — from **Agent** onward they are identical to §4–§9 (implement with `/tdd`
+on a branch, refine the artefact, commit behind `/reviewer` + `/lessons-learned`,
+then pre-push hook → push pipeline → PR review). They differ only in the **front
+phases**: instead of Feature's `Discovery → PRD → Plan`, each has a lighter
+intake followed by a single **Prompt** phase, the right shape for work that does
+not need a full PRD and plan.
+
+### Bug
 
 ```mermaid
 flowchart LR
-  B[Bug] --> I[Investigation] --> P[Plan] --> A[Agent] --> AR[Artifact] --> C[Commit] --> PU[Push] --> PR[PR]
+  classDef bug fill:#ffebee,stroke:#e53935,color:#b71c1c;
+  classDef gate fill:#fff3e0,stroke:#fb8c00,color:#e65100;
+  classDef rel fill:#fce4ec,stroke:#d81b60,color:#880e4f;
 
-  subgraph Skills
-    s1["/bug-analysis"] --> s2["/tdd"] --> s3["/reviewer (archgate)"] --> s4["/push-pr"]
-  end
+  defect(["🐞 Defect"]) --> B1["B1 · Bug<br/>/bug-analysis<br/>repro + failing test"]
+  B1 --> B2["B2 · Prompt<br/>/goal"]
+  B2 --> B3["B3 · Agent → PR<br/>/tdd → /reviewer → /lessons-learned → /pr"]
+  B3 -.->|"recurse"| B1
+  B3 --> SPINE{{"Hooks → Push → PR<br/>shared spine §4–§9"}}
+  SPINE -.->|"PR rework"| B3
+  SPINE ==>|"merge to main"| REL(["release.yml"])
+
+  class B1,B2,B3 bug;
+  class SPINE gate;
+  class REL rel;
 ```
 
-**Stations**
+| #   | Phase      | Skills                                                | Key ADRs                                            |
+| --- | ---------- | ----------------------------------------------------- | --------------------------------------------------- |
+| B1  | Bug        | `/bug-analysis`                                       | `*-adrs` (read)                                     |
+| B2  | Prompt     | `/goal`                                               | `*-adrs`                                            |
+| B3  | Agent → PR | `/tdd` → `/reviewer` + `/lessons-learned` → `/pr`     | same as Feature §4–§9 (`GEN-004`, `GEN-005`, `GEN-006`, Branch Policy, PR Descriptions) |
 
-1. **Investigation** (`/bug-analysis`) — reproduce, isolate root cause, and write
-   a **failing test** before any fix.
-2. **Plan → Agent → Artifact** (`/tdd`) — minimal change to turn the test green.
-3. **Commit → Review → Push → PR** — same gates as the feature flow.
+- **B1. Bug** — Reproduce and understand the defect before touching code.
+  `/bug-analysis` confirms the symptom, isolates the trigger, finds the root
+  cause, and captures a **failing test** that drives the fix in B3.
+- **B2. Prompt** — Turn the analysis into a precise, scoped fix prompt with
+  `/goal`, framing the fix tightly so it addresses the root cause without scope
+  creep.
+- **B3. Agent → PR** — Identical to the Feature delivery spine (§4 Agent → §9 PR):
+  make the failing test pass with `/tdd`, refine, commit behind `/reviewer`, then
+  pre-push → push → PR (with the `GEN-006` Manual Test Plan). The `PR → Agent`
+  rework loop applies.
 
-> The Bug flow's pre-push lane additionally emphasises the **Trivy** scan, since
-> fixes often touch dependencies and inputs.
-
-## 3. Change Request flow
-
-For scoped, well-understood changes that don't need full discovery.
-
-![Change Request flow](./docs/assets/flow-change-request.png)
+### Change-Request
 
 ```mermaid
 flowchart LR
-  R[Requirement] --> PR0[Prompt] --> A[Agent] --> AR[Artifact] --> C[Commit] --> PU[Push] --> PR[PR]
+  classDef chg fill:#fffde7,stroke:#f9a825,color:#f57f17;
+  classDef gate fill:#fff3e0,stroke:#fb8c00,color:#e65100;
+  classDef rel fill:#fce4ec,stroke:#d81b60,color:#880e4f;
 
-  subgraph Skills
-    s1["/goal"] --> s2["/tdd"] --> s3["/reviewer (archgate)"] --> s4["/push-pr"]
-  end
+  req(["📝 Requirement"]) --> C1["C1 · Requirement<br/>human intake"]
+  C1 --> C2["C2 · Prompt<br/>/goal"]
+  C2 --> C3["C3 · Agent → PR<br/>/tdd → /reviewer → /lessons-learned → /pr"]
+  C3 -.->|"recurse"| C2
+  C3 --> SPINE{{"Hooks → Push → PR<br/>shared spine §4–§9"}}
+  SPINE -.->|"PR rework"| C3
+  SPINE ==>|"merge to main"| REL(["release.yml"])
+
+  class C1,C2,C3 chg;
+  class SPINE gate;
+  class REL rel;
 ```
 
-**Stations**
+| #   | Phase       | Skills                                              | Key ADRs                  |
+| --- | ----------- | -------------------------------------------------- | ------------------------- |
+| C1  | Requirement | _(human intake — no skill)_                        | `*-adrs` (read)           |
+| C2  | Prompt      | `/goal`                                            | `*-adrs`                  |
+| C3  | Agent → PR  | `/tdd` → `/reviewer` + `/lessons-learned` → `/pr`  | same as Feature §4–§9     |
 
-1. **Requirement** (`/goal`) — turn the request into a sharp, testable goal.
-2. **Prompt → Agent → Artifact** (`/tdd`) — implement against the acceptance criteria.
-3. **Commit → Review → Push → PR** — same gates as the other flows.
+- **C1. Requirement** — Capture the requested change to existing behavior:
+  clarify what should change, the acceptance criteria, and the blast radius.
+- **C2. Prompt** — Turn the requirement into a precise, scoped implementation
+  prompt with `/goal`.
+- **C3. Agent → PR** — Identical to the Feature delivery spine (§4 Agent → §9 PR).
 
----
+The Bug and Change-Request fronts differ only in intake: Bug starts from a defect
+(**investigation** + `/bug-analysis`) to diagnose *existing, unintended*
+behavior; Change-Request starts from a **requirement** to specify *new or changed
+intended* behavior. Both funnel through the single **Prompt** phase (`/goal`) and
+join the shared spine at **Agent**.
 
-## Gates (the same for every flow)
+## Versioning & release
 
-### `commit-msg` hook
+Versions are cut automatically on every merge to `main` by
+[`release.yml`](.github/workflows/release.yml). Two layers decide the bump:
 
-Validates Conventional Commits via commitlint
-([`commitlint.config.cjs`](./commitlint.config.cjs)).
+1. A **deterministic Conventional-Commits floor** (`scripts/semver-floor.mjs`):
+   `fix:` → patch, `feat:` → minor, `<type>!:` / `BREAKING CHANGE` → major.
+2. An **agent refinement** — the `/decide-semver` skill runs headless, reads the
+   actual diff, and may **raise** the bump (never lower it). The pipeline takes
+   `max(floor, agent)`. Layer 2 needs the `ANTHROPIC_API_KEY` secret; without it
+   the floor is used as-is.
 
-### `pre-push` hook
+The pipeline bumps `package.json`, cuts a `vX.Y.Z` tag + GitHub Release, and
+pushes one `chore(release): bump … [skip ci]` commit — the single documented
+exception to "never commit to `main`" (see `AGENTS.md` › Branch Policy and
+`GEN-007`).
 
-Runs, in order, fail-fast ([`.husky/pre-push`](./.husky/pre-push)):
+```mermaid
+flowchart TD
+  classDef rel fill:#fce4ec,stroke:#d81b60,color:#880e4f;
+  classDef gate fill:#fff3e0,stroke:#fb8c00,color:#e65100;
+  classDef stop fill:#eceff1,stroke:#607d8b,color:#263238;
 
-1. **Archgate** — `npm run archgate` enforces ADR layering rules.
-2. **Trivy** — `scripts/run-trivy.sh` scans for vulns & secrets (soft-fail
-   locally if Trivy isn't installed; hard-fail in CI).
-3. **Unit tests** — `npm run test:unit`.
+  m(["merge to main"]) --> guard{"head commit is<br/>chore(release)?"}
+  guard -->|"yes"| skip(["skip · no release"])
+  guard -->|"no"| floor["Layer 1 · floor<br/>semver-floor.mjs --print<br/>fix→patch · feat→minor · !→major"]
+  floor --> key{"ANTHROPIC_API_KEY<br/>secret set?"}
+  key -->|"yes"| agent["Layer 2 · /decide-semver<br/>reads diff · may only RAISE"]
+  key -->|"no"| usefloor["use floor as-is"]
+  agent --> mx["semver-floor.mjs --max floor agent<br/>= max(floor, agent)"]
+  usefloor --> mx
+  mx --> bump["--apply level<br/>bump package.json"]
+  bump --> tag["tag vX.Y.Z<br/>+ GitHub Release"]
+  tag --> commit["chore(release): bump … [skip ci]<br/>single commit to main"]
+  commit -.->|"guarded — does not re-trigger"| guard
 
-### Push pipeline
-
-On every push: install → lint → unit tests
-([`.github/workflows/push-pipeline.yml`](./.github/workflows/push-pipeline.yml)).
-
-### PR pipeline
-
-On every PR: full suite (unit + smoke/integration) + Trivy + archgate + coverage
-([`.github/workflows/pr-pipeline.yml`](./.github/workflows/pr-pipeline.yml)).
-
-### Nightly
-
-Scheduled end-to-end suite
-([`.github/workflows/nightly-e2e.yml`](./.github/workflows/nightly-e2e.yml)).
+  class floor,agent,usefloor,mx,bump,tag,commit rel;
+  class guard,key gate;
+  class skip stop;
+```

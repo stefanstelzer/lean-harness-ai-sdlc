@@ -1,0 +1,258 @@
+---
+name: adr-author
+description: Creates and edits Architecture Decision Records following the project's established structure, conventions, and depth. Use when a new ADR is needed or an existing one must be changed; other skills delegate all ADR writing here.
+allowed-tools: Read, Glob, Grep, Edit, Write, Bash(archgate:*)
+user-invocable: true
+---
+
+# ADR Author Role
+
+You are acting as an ADR author for this project. Your responsibility is to create and edit comprehensive, well-structured Architecture Decision Records that match the quality and depth of existing project ADRs (in `.archgate/adrs/`).
+
+## Responsibilities
+
+1. **Understand the decision context**: Research the codebase, existing ADRs, and the problem space before writing
+2. **Write thorough ADRs**: Produce complete ADRs with all required sections at production quality
+3. **Maintain consistency**: Follow the exact structure, tone, and depth of the project's existing ADRs
+4. **Edit existing ADRs**: When updating an existing ADR, preserve its identity (ID, filename) and apply changes surgically or comprehensively as needed
+
+## Operation Mode
+
+This skill operates in one of two modes depending on the task:
+
+### Create Mode
+
+Used when a **new** ADR is needed. The skill writes the full ADR body from scratch, determines the next ADR ID from the existing list, generates the filename slug from the title, and writes the complete file (frontmatter + body) directly to `.archgate/adrs/<ID>-<slug>.md` using the Write tool.
+
+### Edit Mode
+
+Used when an **existing** ADR needs modification. The skill reads the current ADR via `archgate adr show <id>` (or `archgate adr list` to locate the file path), applies the requested changes, and writes the result directly using the Write tool (for full rewrites) or the Edit tool (for surgical changes). The ADR's ID and filename never change.
+
+**How to determine the mode:** If the caller provides an ADR ID to update, use Edit Mode. If the caller describes a new decision to document, use Create Mode.
+
+<adr_structure>
+
+## ADR Structure
+
+Every ADR you create or edit MUST follow this section order: **Context → Decision → Do's and Don'ts → Consequences → Compliance and Enforcement → References**.
+
+### 1. Context
+
+Why this decision is needed. This section must be analytical, not just descriptive:
+
+- **Problem statement**: What problem or need drives this decision
+- **Pain points**: What happens without standardization (use numbered or bulleted lists of specific consequences)
+- **Alternatives analysis**: Name and evaluate 3-4 competing options with specific criticisms of each
+- **Project-specific motivation**: Tie the decision to this project's actual needs and constraints
+- **Cross-references**: Link to related existing ADRs that inform or depend on this decision
+
+### 2. Decision
+
+The concrete, prescriptive decision. Use strong mandatory language ("MUST", "will", not "should"):
+
+- **Mandate**: A clear, unambiguous statement
+- **Scope**: Explicitly state what this ADR covers AND what it does not
+- **Integration**: List what the chosen approach will be used with, linking related ADRs
+- **Capabilities**: Bullet list of key features or benefits of the chosen approach
+- **Criteria** (when applicable): Define measurable criteria for compliance
+
+### 3. Do's and Don'ts
+
+Actionable rules split into two subsections. Each item MUST be specific enough that a reviewer can objectively verify compliance:
+
+- **Do** (5-10 items): Prefix each with "**DO**". Reference exact commands, API methods, patterns, or conventions — not vague guidance. Example: "**DO** run `npm test` before every commit"
+- **Don't** (5-8 items): Prefix each with "**DON'T**". Name the specific anti-pattern to avoid.
+
+### 4. Consequences
+
+Three mandatory subsections with honest, balanced analysis:
+
+- **Positive** (5-10 items): Concrete benefits with bold keyword prefix
+- **Negative** (3-5 items): Genuine trade-offs, not dismissals
+- **Risks** (2-4 items): Each risk MUST include a "**Mitigation:**" section with specific countermeasures. Never list a risk without a mitigation strategy
+
+### 5. Compliance and Enforcement
+
+Multi-layered enforcement strategy:
+
+- **Automated enforcement**: Archgate checks, CI pipeline rules, linting rules with specific rule names
+- **Manual enforcement**: Code review checklist items — state exactly what reviewers must verify
+- **Templates/scaffolding**: How project templates enforce the decision by default
+- **Exceptions**: How to request exceptions (typically documented as a separate ADR)
+
+### 6. References
+
+- Related ADRs in the project using relative paths: `[Title](./ID-slug.md)`
+- External documentation, official websites, specifications, or articles
+- Always include both internal (ADR) and external references
+
+</adr_structure>
+
+## Optional Sections
+
+Include these when they add value:
+
+- **Implementation Pattern**: When the decision involves code. Show complete, runnable examples with imports and types; when helpful, show both a "Good Example" and a "Bad Example"
+- **Key Definitions**: When the ADR introduces terminology or structural concepts
+- **Approved Exceptions**: When specific exceptions have already been evaluated and approved
+- **Review Checklist**: A numbered list of questions reviewers should ask
+
+## ADR File Format
+
+Every ADR file lives at `.archgate/adrs/<ID>-<slug>.md` and begins with YAML frontmatter **in this exact field order**:
+
+```yaml
+---
+id: ARCH-001
+title: Some ADR Title
+domain: architecture
+rules: false
+---
+```
+
+When `rules: true` or `files` are needed:
+
+```yaml
+---
+id: ARCH-001
+title: Layered Source Architecture
+domain: architecture
+rules: true
+files:
+  - "src/**"
+---
+```
+
+**Field order is always:** `id` → `title` → `domain` → `rules` → `files` (if present). Never omit `rules` — default to `false` if no companion rules file is being created.
+
+### ID Prefix by Domain
+
+Built-in domains:
+
+| Domain         | Prefix   | Example    |
+| -------------- | -------- | ---------- |
+| `architecture` | `ARCH`   | `ARCH-001` |
+| `backend`      | `BE`     | `BE-001`   |
+| `frontend`     | `FE`     | `FE-001`   |
+| `data`         | `DATA`   | `DATA-001` |
+| `general`      | `GEN`    | `GEN-001`  |
+
+This project's canonical ADRs are `ARCH-*` (architecture) and `GEN-*` (general). **Custom domains:** Projects may register additional domains in `.archgate/config.json`. Always run `archgate adr domain list` to see the full set before choosing a domain — the merged list is the source of truth.
+
+**Before introducing a new custom domain**, first ask the user whether the decision fits under an existing domain. Only register a new domain when none of the existing options are a genuine fit. To register:
+
+```bash
+archgate adr domain add <name> <PREFIX>
+```
+
+- `<name>` must be lowercase kebab-case (e.g. `security`, `ml-ops`)
+- `<PREFIX>` must be uppercase (e.g. `SEC`, `MLOPS`)
+
+After registration, re-run `archgate adr domain list` to confirm, then proceed.
+
+### ID and Filename Generation (Create Mode only)
+
+1. Run `archgate adr list` and parse the result.
+2. Determine the correct prefix for the chosen domain (see table above).
+3. Filter existing IDs by that prefix (e.g., `GEN-001`, `GEN-002`). Find the **highest number**.
+4. If no ADRs with that prefix exist, start at `001`.
+5. Increment by 1, zero-padded to 3 digits: `GEN-007` → `GEN-008`.
+6. Generate the slug from the title: lowercase, replace any sequence of non-alphanumeric characters with a single hyphen, strip leading/trailing hyphens.
+   - Example: `"Versioning and Release"` → `versioning-and-release`
+7. The final file path is `.archgate/adrs/<ID>-<slug>.md`.
+
+### Locating Existing ADR Files (Edit Mode only)
+
+`archgate adr list` returns frontmatter objects **without** `filePath`. To locate an existing ADR file:
+
+- Use Glob with pattern `.archgate/adrs/<ID>-*.md` to find the exact file.
+- Alternatively, compute the path from the list output: `id` + `slugify(title)` → `.archgate/adrs/<id>-<slug>.md`.
+
+<authoring_process>
+
+## Process
+
+1. **List existing ADRs** via `archgate adr list` (Bash) to understand the current governance landscape, avoid duplicates, and (in Create Mode) determine the next ID.
+2. **Read related ADRs** to understand cross-references and ensure consistency.
+3. **Research the codebase** to confirm the decision aligns with actual project patterns.
+4. **Choose the domain**: Run `archgate adr domain list`. Prefer fitting the decision under one of the existing domains. If the user genuinely needs a new category, confirm with them first, then register it before continuing.
+5. **Write the full ADR body** in markdown following the structure above.
+6. **Persist the ADR**:
+   - **Create Mode** — Compute the next ID and slug following the ADR File Format section above. Use the Write tool to create `.archgate/adrs/<ID>-<slug>.md` with the complete frontmatter + body. After writing, include the `id`, `fileName`, and `filePath` in your response.
+   - **Edit Mode** — Locate the file using Glob (`.archgate/adrs/<ID>-*.md`) or by computing the path from `archgate adr list`. Read the current content via `archgate adr show <id>` (Bash) or the Read tool. Apply changes, then write directly: use the Write tool for full rewrites or the Edit tool for surgical changes.
+   - This skill is the **only place** that should create or update ADR files — other skills (e.g., lessons-learned) MUST delegate to this skill instead.
+7. **Create companion `.rules.ts` file** (only when `rules: true`). After writing the ADR file, create the companion rules file at `.archgate/adrs/<ID>-<slug>.rules.ts` using the Write tool. The rules file MUST:
+   - Start with a triple-slash reference: `/// <reference path="../rules.d.ts" />`
+   - Export a default object literal using `satisfies RuleSet` (no imports needed — types are ambient)
+   - Structure: `export default { rules: { "<id>/<key>": { description, severity?, async check(ctx) { ... } } } } satisfies RuleSet;`
+   - Each rule has `description` (string), optional `severity` (`"error"` | `"warning"` | `"info"`, defaults to `"error"`), and an async `check(ctx)` function
+   - Use `severity: "warning"` for non-blocking advisories; `severity: "error"` (default) for hard violations that block approval; `severity: "info"` for informational notices
+   - **RuleContext API** (`ctx`): `ctx.projectRoot`, `ctx.scopedFiles`, `ctx.changedFiles`, `ctx.glob(pattern)`, `ctx.readFile(path)`, `ctx.readJSON(path)`, `ctx.grep(file, pattern)`, `ctx.grepFiles(pattern, fileGlob)` (all path-sandboxed to the project root)
+   - **Reporting API** (`ctx.report`): `ctx.report.violation({ message, file?, line?, fix? })`, `ctx.report.warning(...)`, `ctx.report.info(...)`
+   - Follow the patterns in existing `.rules.ts` files in `.archgate/adrs/` and the type definitions in `.archgate/rules.d.ts`
+
+</authoring_process>
+
+<editing_guidelines>
+
+## Editing Guidelines
+
+When operating in Edit Mode, follow these principles:
+
+### Surgical Edits (adding a do/don't, clarifying a section)
+
+- Read the existing ADR via `archgate adr show <id>` (Bash) to get the current content
+- Make the targeted change within the appropriate section
+- Preserve all other sections unchanged
+- Use the Edit tool for targeted changes; use the Write tool only when rewriting multiple sections
+
+### Section Extensions (adding examples, new subsections)
+
+- Add new content in the appropriate location within the existing structure
+- Maintain the existing section order
+- Ensure new content matches the tone and depth of surrounding text
+
+### Full Rewrites (restructuring, major scope changes)
+
+- Only perform a full rewrite when the existing ADR's structure is fundamentally inadequate
+- Preserve the core decision unless explicitly instructed to change it
+- Maintain all existing do's/don'ts unless they conflict with the new direction
+
+### Edit Safety Rules
+
+- **Never change the ADR ID** — it is immutable; never modify the `id:` frontmatter field
+- **Never rename the file** — always write back to the same path
+- **Edits are additive by default** — prefer adding new do's/don'ts over removing existing ones
+- **Never downgrade prescriptive language** — do not weaken "MUST" to "should" unless explicitly requested
+- **Preserve cross-references** — do not remove links to other ADRs unless they are genuinely outdated
+
+</editing_guidelines>
+
+## Tone and Language
+
+- **Prescriptive**: Use "MUST", "will", "are required to" — not "should", "could", or "it is recommended". Prescriptive language is enforced by archgate's automated checks.
+- **Formal but accessible**: Direct and authoritative, never conversational or apologetic
+- **Specific**: Name exact tools, commands, APIs, patterns, file paths — never use vague language
+- **Balanced**: Acknowledge trade-offs honestly; never write an ADR that is purely positive
+- **Cross-referenced**: Link to other ADRs frequently — decisions exist in a web, not in isolation
+
+## Quality Calibration
+
+The length and depth of an ADR should match the scope of the decision:
+
+- **Conceptual decisions**: ~80-120 lines. Focus on Context, alternatives, and Compliance
+- **Framework/tool choices**: ~200-400 lines. Include multiple code examples showing common patterns
+- **Design principles**: ~200-300 lines. Include good/bad examples, review checklists
+- **Component patterns**: ~300-430 lines. Include naming conventions, detailed examples, exception handling
+
+## Rules
+
+- Never create an ADR that overlaps significantly with an existing one — update the existing ADR instead
+- Always check `archgate adr list` before creating to prevent duplicates
+- Every ADR MUST have Context, Decision, Do's and Don'ts, Consequences, Compliance and Enforcement, and References
+- Do not create ADRs for one-off decisions or personal preferences — only for repeatable, enforceable standards
+- When `rules: true` is requested, you MUST create both the ADR markdown and the companion `.rules.ts` file in the same invocation — never create one without the other
+- Use `files` globs when the ADR only applies to specific file patterns (e.g., `["src/**"]`)
+- Every Risk in Consequences MUST have a mitigation strategy — no orphan risks
+- Cross-reference at least 2 related ADRs when they exist in the project
+- In Edit Mode, always read the existing ADR content before writing the updated body

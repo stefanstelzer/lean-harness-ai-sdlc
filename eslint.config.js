@@ -4,7 +4,10 @@ import prettier from 'eslint-config-prettier';
 
 export default tseslint.config(
   {
-    ignores: ['dist/**', 'node_modules/**', 'coverage/**'],
+    // `.archgate/**/*.rules.ts` are archgate rule modules: tooling validated by
+    // the archgate CLI against `.archgate/rules.d.ts` (triple-slash reference),
+    // not part of the library source — so they are not linted here.
+    ignores: ['dist/**', 'node_modules/**', 'coverage/**', '.archgate/**'],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
