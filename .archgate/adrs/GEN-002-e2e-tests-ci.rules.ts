@@ -34,27 +34,5 @@ export default {
         }
       },
     },
-
-    "gen002/e2e-runs-in-ci": {
-      description:
-        "At least one GitHub Actions workflow must run the e2e suite",
-      severity: "warning",
-      async check(ctx) {
-        const workflows = await ctx.glob(".github/workflows/*.yml");
-        if (workflows.length === 0) return; // CI authored elsewhere; don't block
-        const bodies = await Promise.all(
-          workflows.map((f) => ctx.readFile(f)),
-        );
-        const joined = bodies.join("\n");
-        if (!/(test:e2e|tests\/e2e|\be2e\b)/i.test(joined)) {
-          ctx.report.warning({
-            message:
-              "No workflow references the e2e suite. CI must run end-to-end tests (GEN-002).",
-            file: ".github/workflows/",
-            fix: "Invoke `npm run test:e2e` from a CI workflow (nightly and/or PR).",
-          });
-        }
-      },
-    },
   },
 } satisfies RuleSet;

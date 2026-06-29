@@ -54,21 +54,21 @@ flowchart LR
     A["Agent<br/>/tdd"] --> AR["Artefact<br/>refactor"]
     AR --> CO["Commit<br/>/reviewer · /lessons-learned · /pr"]
     CO -.->|"local ┃ remote"| HK["Hooks<br/>pre-push"]
-    HK --> PU["Push<br/>push.yml"]
-    PU --> PR["PR<br/>pr.yml · review"]
+    HK --> PU["Push<br/>ci.yml"]
+    PU --> PR["PR<br/>ci.yml · review"]
   end
 
   A -.->|"inner loop"| AR
   AR -.->|"inner loop"| A
   PR -.->|"outer rework loop"| A
-  PR ==>|"merge to main"| REL["Release<br/>release.yml"]
+  PR ==>|"approved"| MG(["merged to main"])
 
   class d1,d2,d3 front;
   class b1,b2 bug;
   class c1,c2 chg;
   class A,AR,CO spine;
   class HK,PU,PR gate;
-  class REL rel;
+  class MG spine;
 ```
 
 > The same diagram as a presentation deck lives in
@@ -124,16 +124,16 @@ flowchart TD
 
   P6 -.->|"local ┃ remote"| G7{{"7 · Hooks · pre-push<br/>symlinks · archgate · trivy · tests"}}
   G7 -->|"fail"| P4
-  G7 -->|"pass"| G8{{"8 · Push · push.yml<br/>lint · check:links · archgate:ci · build · test"}}
-  G8 --> P9["9 · PR<br/>/pr · pr.yml · human review"]
+  G7 -->|"pass"| G8{{"8 · Push · ci.yml<br/>lint · check:links · archgate:ci · build · test"}}
+  G8 --> P9["9 · PR<br/>/pr · ci.yml · human review"]
   P9 -->|"changes requested"| P4
-  P9 ==>|"approved · merge to main"| REL(["release.yml"])
+  P9 ==>|"approved · merge to main"| MG(["merged to main"])
 
   class P1,P2,P3 front;
   class P4,P5 build;
   class G7,G8 gate;
   class docPRD,docPLN doc;
-  class REL rel;
+  class MG build;
 ```
 
 | #   | Phase     | Skills                                                  | Key ADRs                                  | Documents                          | Tests                          | Pipeline                  | Git                                  |
@@ -145,12 +145,12 @@ flowchart TD
 | 5   | Artefact  | `/tdd` (refactor while green)                           | `ARCH-001`, area ADRs                      | updated docs                       | Unit                           | —                         | —                                    |
 | 6   | Commit    | `/reviewer` → `/lessons-learned` → `/pr` (commit)      | archgate = all ADRs; `GEN-001`            | ADRs / agent-memory                | Unit                           | local archgate            | Conventional-Commits commit          |
 | 7   | Hooks     | `/pr` (push fires the hook)                             | symlink invariants, archgate, `GEN-005`   | —                                  | Unit                           | `.husky/pre-push`         | pre-push gate                        |
-| 8   | Push      | `/pr`                                                   | `GEN-002`, `GEN-005`                       | —                                  | Unit · Smoke (`tests/smoke/`)  | `push.yml`                | branch pushed                        |
-| 9   | PR        | `/pr` + human review                                    | `AGENTS.md` PR Descriptions, `GEN-006`     | PR body (Summary/Commits/Manual Test Plan) | e2e on `nightly.yml`   | `pr.yml`                  | PR opened, merged on green           |
+| 8   | Push      | `/pr`                                                   | `GEN-005`                                  | —                                  | Unit · Smoke (`tests/smoke/`)  | `ci.yml`                  | branch pushed                        |
+| 9   | PR        | `/pr` + human review                                    | `AGENTS.md` PR Descriptions, `GEN-006`     | PR body (Summary/Commits/Manual Test Plan) | — (e2e run on demand, `GEN-002`) | `ci.yml`                | PR opened, merged on green           |
 
 Support skills outside the loop: `/write-better-skill` (when authoring skills),
 `/adr-author` (invoked by `/grill-me-with-context` to write decisions back as
-ADRs), and `/decide-semver` (run headless by `release.yml`, see Versioning).
+ADRs), and `/decide-semver` (a manual release helper, see Versioning).
 
 ### 1. Discovery
 
@@ -220,10 +220,12 @@ ADRs), and `/decide-semver` (run headless by `release.yml`, see Versioning).
 
 - **Goal:** Publish the branch and run the shared pipeline.
 - **Skill:** `/pr` pushes the branch.
-- **Pipeline:** **Push pipeline** ([`push.yml`](.github/workflows/push.yml)):
-  install → lint → check:links → archgate:ci → trivy → build → test.
-- **Tests:** Unit + smoke suites under Vitest.
-- **Done when:** The push pipeline is green.
+- **Pipeline:** **CI pipeline** ([`ci.yml`](.github/workflows/ci.yml)) — the single
+  workflow, triggered on push and pull_request:
+  install → lint → check:links → check:plugins → archgate:ci → trivy → build → test.
+- **Tests:** Unit + smoke suites under Vitest (e2e is run on demand, not in CI —
+  see `GEN-002`).
+- **Done when:** The CI pipeline is green.
 
 ### 9. PR
 
@@ -233,13 +235,14 @@ ADRs), and `/decide-semver` (run headless by `release.yml`, see Versioning).
   `/lessons-learned` along the way.
 - **Human:** **Review** — the human reviews the PR; feedback loops back to
   **Agent** (outer rework loop).
-- **Pipeline:** **PR pipeline** ([`pr.yml`](.github/workflows/pr.yml)); the
-  **nightly** pipeline ([`nightly.yml`](.github/workflows/nightly.yml)) runs the
-  full suite incl. **e2e** (`tests/e2e/`, `GEN-002`) on a schedule.
+- **Pipeline:** **CI pipeline** ([`ci.yml`](.github/workflows/ci.yml)) — the same
+  single workflow that ran on push produces the required `Verify` check on the PR.
+  The **e2e** suite (`tests/e2e/`, `GEN-002`) is **not** run in CI; run it on
+  demand (`npm run test:e2e`).
 - **Constraints:** The PR body MUST follow `AGENTS.md` › PR Descriptions and the
   `GEN-006` Manual Test Plan rule.
-- **Done when:** Reviewed, all required checks green, and merged. On merge to
-  `main`, `release.yml` cuts the version (see Versioning).
+- **Done when:** Reviewed, all required checks green, and merged. Cutting a version
+  afterwards is a manual step (see Versioning).
 
 ## Variants
 
@@ -265,11 +268,11 @@ flowchart LR
   B3 -.->|"recurse"| B1
   B3 --> SPINE{{"Hooks → Push → PR<br/>shared spine §4–§9"}}
   SPINE -.->|"PR rework"| B3
-  SPINE ==>|"merge to main"| REL(["release.yml"])
+  SPINE ==>|"approved"| MG(["merged to main"])
 
   class B1,B2,B3 bug;
   class SPINE gate;
-  class REL rel;
+  class MG gate;
 ```
 
 | #   | Phase      | Skills                                                | Key ADRs                                            |
@@ -303,11 +306,11 @@ flowchart LR
   C3 -.->|"recurse"| C2
   C3 --> SPINE{{"Hooks → Push → PR<br/>shared spine §4–§9"}}
   SPINE -.->|"PR rework"| C3
-  SPINE ==>|"merge to main"| REL(["release.yml"])
+  SPINE ==>|"approved"| MG(["merged to main"])
 
   class C1,C2,C3 chg;
   class SPINE gate;
-  class REL rel;
+  class MG gate;
 ```
 
 | #   | Phase       | Skills                                              | Key ADRs                  |
@@ -330,41 +333,34 @@ join the shared spine at **Agent**.
 
 ## Versioning & release
 
-Versions are cut automatically on every merge to `main` by
-[`release.yml`](.github/workflows/release.yml). Two layers decide the bump:
+Releases are cut **manually** — there is no release pipeline. When it is time to
+ship, a maintainer decides the bump in two layers, then lands it through the
+normal branch → PR → merge flow:
 
 1. A **deterministic Conventional-Commits floor** (`scripts/semver-floor.mjs`):
    `fix:` → patch, `feat:` → minor, `<type>!:` / `BREAKING CHANGE` → major.
-2. An **agent refinement** — the `/decide-semver` skill runs headless, reads the
-   actual diff, and may **raise** the bump (never lower it). The pipeline takes
-   `max(floor, agent)`. Layer 2 needs the `ANTHROPIC_API_KEY` secret; without it
-   the floor is used as-is.
+2. An **optional agent refinement** — run `/decide-semver`, which reads the actual
+   diff and may **raise** the bump (never lower it); take `max(floor, agent)`.
+   Skip it and the deterministic floor stands alone.
 
-The pipeline bumps `package.json`, cuts a `vX.Y.Z` tag + GitHub Release, and
-pushes one `chore(release): bump … [skip ci]` commit — the single documented
-exception to "never commit to `main`" (see `AGENTS.md` › Branch Policy and
-`GEN-007`).
+Then bump `package.json`, update `CHANGELOG.md`, open the change as a PR like any
+other, and tag `vX.Y.Z` on the merged commit. **No machine commits to `main`**
+(see `AGENTS.md` › Branch Policy and `GEN-007`).
 
 ```mermaid
 flowchart TD
   classDef rel fill:#fce4ec,stroke:#d81b60,color:#880e4f;
   classDef gate fill:#fff3e0,stroke:#fb8c00,color:#e65100;
-  classDef stop fill:#eceff1,stroke:#607d8b,color:#263238;
 
-  m(["merge to main"]) --> guard{"head commit is<br/>chore(release)?"}
-  guard -->|"yes"| skip(["skip · no release"])
-  guard -->|"no"| floor["Layer 1 · floor<br/>semver-floor.mjs --print<br/>fix→patch · feat→minor · !→major"]
-  floor --> key{"ANTHROPIC_API_KEY<br/>secret set?"}
-  key -->|"yes"| agent["Layer 2 · /decide-semver<br/>reads diff · may only RAISE"]
-  key -->|"no"| usefloor["use floor as-is"]
-  agent --> mx["semver-floor.mjs --max floor agent<br/>= max(floor, agent)"]
-  usefloor --> mx
-  mx --> bump["--apply level<br/>bump package.json"]
-  bump --> tag["tag vX.Y.Z<br/>+ GitHub Release"]
-  tag --> commit["chore(release): bump … [skip ci]<br/>single commit to main"]
-  commit -.->|"guarded — does not re-trigger"| guard
+  start(["time to release"]) --> floor["Layer 1 · floor<br/>semver-floor.mjs --print<br/>fix→patch · feat→minor · !→major"]
+  floor --> agent{"run /decide-semver?"}
+  agent -->|"yes · may only RAISE"| mx["level = max(floor, agent)"]
+  agent -->|"no"| usefloor["level = floor"]
+  mx --> bump["--apply level<br/>bump package.json + CHANGELOG.md"]
+  usefloor --> bump
+  bump --> pr["open PR → review → merge"]
+  pr --> tag["tag vX.Y.Z on the merged commit"]
 
-  class floor,agent,usefloor,mx,bump,tag,commit rel;
-  class guard,key gate;
-  class skip stop;
+  class floor,mx,usefloor,bump,pr,tag rel;
+  class agent gate;
 ```

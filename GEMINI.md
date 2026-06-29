@@ -153,13 +153,10 @@ explain this rule, then offer to create a branch and commit there instead.
   (`prd/PRD-<n>-<slug>.md`) and plan (`plans/PLN-<n>-<slug>.md`) — landed by
   `/tdd` before any production code.
 
-The **single** machine exception is the automated release pipeline
-([`release.yml`](./.github/workflows/release.yml), see `GEN-007`): on merge to
-`main` it pushes exactly one release-bot commit
-`chore(release): bump … [skip ci]` that bumps `package.json` and cuts the tag.
-The bot is on the `protect-main` ruleset bypass list and the `[skip ci]` marker
-stops the bump commit from re-triggering the pipeline. This is the documented,
-auditable exception — it does not license any human or agent to commit to `main`.
+There are **no exceptions** — not even for releases. Versioning is manual and
+goes through the normal branch → PR → merge flow like any other change: bump
+`package.json`, update `CHANGELOG.md`, and tag `vX.Y.Z` on a branch, then open a
+PR (see `GEN-007`). No machine writes to `main`.
 
 ## PR Descriptions
 

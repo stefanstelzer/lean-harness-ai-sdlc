@@ -46,7 +46,7 @@ the source propagate and no stale artefacts survive. A small set of manifests is
 
 Sync is enforced mechanically: `scripts/check-plugins.sh` (`npm run check:plugins`)
 re-runs the generator and fails if the generated tree differs from a fresh build.
-It is wired into `npm run verify`, the pre-push hook, and CI (`push.yml` / `pr.yml`),
+It is wired into `npm run verify`, the pre-push hook, and CI (`ci.yml`),
 mirroring how `check:skills` / `check:rules` enforce the `.agents/` → `.claude/`
 symlink invariant. This ADR is `rules: false`: the gate is the
 `check:plugins` script plus pre-push/CI discipline, not an executable archgate rule.
