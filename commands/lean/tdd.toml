@@ -40,6 +40,7 @@ vertical (do this):  test1→impl1, test2→impl2, test3→impl3, …
 
 - **Create the feature branch off `main`** — `git checkout -b feat/<slug>` (use `fix/<slug>` for a bug). Never work on `main` (`AGENTS.md` › Branch Policy).
 - **Make the first commit the spec.** Commit the PRD (`prd/PRD-<n>-*.md`) and the plan (`plans/PLN-<n>-*.md`) that `/discovery` and `/prd-to-plan` produced — e.g. `docs(plan): PRD + plan for <feature>` — before any test or implementation. Landing the agreed contract first makes every later diff reviewable against it. (For a standalone change with no PRD/plan, still branch off `main` first; there is simply no spec commit to make.)
+- **Load the plan _and_ its upstream PRD.** Open the plan and follow its `**Upstream PRD:**` link (`GEN-006` requires every plan to carry one); keep both in context as you implement, so each phase is built against the requirements it descends from, not the plan alone.
 
 **Done when** the branch exists off `main` and — when a PRD/plan exist — its first commit contains them and nothing else.
 
@@ -57,11 +58,13 @@ Write ONE test for the first behaviour and watch it go **red**, then write the m
 
 ### 4. Incremental loop
 
-For each remaining behaviour: red (next test fails) → green (minimal code passes). One test at a time; only enough code to pass the current test; don't anticipate the next one. Re-run with verbose output to read exactly which assertion fails:
+For each remaining behaviour: red (next test fails) → green (minimal code passes). One test at a time; only enough code to pass the current test; don't anticipate the next one. Re-run scoped to the file you're driving, with verbose output, to read exactly which assertion fails:
 
 ```
-npm test -- --reporter=verbose
+npm test -- <test-file> --reporter=verbose
 ```
+
+Everything after `--` is forwarded to Vitest, so the `<test-file>` filter scopes the run to the slice you're on. Use the inner loop's `npm test` (which runs **without** coverage), not `npm run test:coverage`: a single-file run only covers a few percent of the suite, so running it under the global coverage threshold would exit non-zero **even when your tests pass** — making a real red indistinguishable from a coverage-threshold red. The coverage gate belongs to the whole-net run in step 5.
 
 Adjust the **implementation, never the test**. A pre-existing test going red is a regression — fix it before continuing. Never weaken a test to make it pass; if a test is genuinely wrong, change the specification explicitly and rewrite it from scratch.
 
@@ -69,10 +72,10 @@ Adjust the **implementation, never the test**. A pre-existing test going red is 
 
 Once every test passes, look for [refactor candidates](refactoring.md): extract duplication, deepen shallow modules, move logic to where the data lives. Run the suite after each step. **Never refactor while red** — get to green first.
 
-Then verify the whole net is green before calling it done:
+Then verify the whole net is green before calling it done — this is where the coverage threshold (`vitest.config.ts`, `GEN-005`) is meant to gate, so run the full suite **with** coverage:
 
 ```
-npm test
+npm run test:coverage
 npm run archgate
 ```
 

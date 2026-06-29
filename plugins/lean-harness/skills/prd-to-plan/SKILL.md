@@ -18,7 +18,7 @@ Every phase carries the contract `/tdd` needs:
 - **Seam + interface** — the test boundary and the public signature being introduced or changed. This is what `/tdd` writes its test against.
 - **Red behaviour list** — the behaviours to drive red → green, highest-risk first; include the validation and error-handling contract, not just the happy path.
 - **Modules touched** — the files/modules the phase changes, named. **No code snippets** (they go stale; the exception is a prototype-derived snippet that encodes a decision more precisely than prose — a schema, type, or state machine).
-- **Manual Test Plan** — a checklist of concrete, human-runnable steps, e.g. `- [ ] npm test -- <pattern> is green; …`. **Required on every phase by `GEN-006`** — never omit it.
+- **Manual Test Plan** — a `### Manual Test Plan` sub-section (H3) inside the phase, with a checklist of concrete, human-runnable steps, e.g. `- [ ] npm test -- <pattern> is green; …`. **Required on every phase by `GEN-006`**, which matches the H2 phase heading (`## Phase N: …`) and the H3 `### Manual Test Plan` heading below — never omit it, and keep the headings at these levels so the gate actually inspects the phase.
 - **Binding ADRs** — name the ADRs the phase must satisfy (routed by the `*-adrs` rules), so the constraints are explicit.
 - _Acceptance criteria_ (recommended) — the done-bar for the phase.
 
@@ -35,9 +35,9 @@ Before finalising, check every phase:
 2. **Decompose into deep-module phases, risk-first.** One deep module per phase; Phase 1 is the riskiest module (the tracer bullet); order the rest by dependency. **Confirm the module set and the phase boundaries with the user** before writing the detail.
 3. **Write each phase's contract** — seam + interface, red behaviour list (highest-risk behaviour first), modules touched (no code), Manual Test Plan (`GEN-006`), binding ADRs, and acceptance criteria.
 4. **Run the guardrail pass** — deep-module check and ADR-citation check on every phase.
-5. **Write `plans/PLN-<n>-<slug>.md`** in the plan format below, then present it for human review.
+5. **Write `plans/PLN-<n>-<slug>.md`** in the plan format below — including the mandatory `**Upstream PRD:**` link (`GEN-006`) — then present it for human review.
 
-A plan is **done** when every phase is a deep module with its full `/tdd` contract (Manual Test Plan included), the guardrails pass, and the human has reviewed it.
+A plan is **done** when every phase is a deep module with its full `/tdd` contract (Manual Test Plan included), the plan links its upstream PRD, the guardrails pass, and the human has reviewed it.
 
 ## Plan format
 
@@ -46,7 +46,7 @@ A plan is **done** when every phase is a deep module with its full `/tdd` contra
 ```
 # Plan: PLN-<n> <title>
 
-Source PRD: [prd/PRD-<n>-<slug>.md](../prd/PRD-<n>-<slug>.md)
+**Upstream PRD:** [prd/PRD-<n>-<slug>.md](../prd/PRD-<n>-<slug>.md)
 Branch: <feature-branch> off main
 
 ## Context
@@ -58,22 +58,26 @@ decoupling, and the binding ADRs — as a bulleted list.
 
 ## Phases (TDD red→green)
 
-### Phase 1 — <riskiest deep module> (tracer bullet)
+## Phase 1: <riskiest deep module> (tracer bullet)
 <what the module is; its seam + public interface>
-- Modules touched: <files, no code>
-- Binding ADRs: <ids>
 
-**Red behaviours**
+### Modules touched
+<files, no code>
+
+### Binding ADRs
+<ids>
+
+### Red behaviours
 - <behaviour> (highest-risk / validation contract first)
 - …
 
-**Manual Test Plan**
+### Manual Test Plan
 - [ ] npm test -- <pattern> is green; <observable outcome>
 
-**Acceptance criteria**
+### Acceptance criteria
 - <done-bar>
 
-### Phase 2 — <next deep module>
+## Phase 2: <next deep module>
 …
 
 ## Out of scope
@@ -82,4 +86,11 @@ What the plan deliberately does not cover.
 ## Verification
 The end-to-end checks: build, the test suites, archgate, README consistency.
 ```
+
+The phase title is **H2** (`## Phase N: …`) and `### Manual Test Plan` is **H3** — this is
+the exact markup the `gen006/plans-have-manual-test-plan` rule inspects, so authoring to this
+template keeps the gate effective. The **Upstream PRD** link is mandatory
+(`gen006/plans-link-upstream-prd`): it is what lets `/tdd` load the PRD and the plan together
+at implementation time. For a genuinely standalone plan with no PRD, add `upstream-prd: none`
+frontmatter with a one-line reason instead of the link.
 

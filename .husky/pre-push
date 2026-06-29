@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 #
 # Pre-push gate (single package) — mirrors the deep-amber husky v9 hook.
-# Order: symlinks -> plugin artefacts -> archgate compliance -> Trivy -> tests.
+# Order: symlinks -> plugin artefacts -> archgate compliance -> Trivy -> typecheck -> tests.
 # Abort on the first failure.
 
 echo "=== Skill Symlink Check ==="
@@ -23,6 +23,12 @@ echo ""
 echo "=== Trivy Security & Vulnerability Scan ==="
 # run-trivy.sh soft-skips (exit 0) when Trivy is not installed locally.
 sh scripts/run-trivy.sh || { echo "❌ Trivy scan failed. Push aborted."; exit 1; }
+
+echo ""
+echo "=== TypeScript Typecheck ==="
+# Vitest/esbuild transpiles without type-checking, so a type error would otherwise
+# only surface at build/CI. Catch it here (GEN-003).
+npm run typecheck || { echo "❌ Typecheck failed. Push aborted."; exit 1; }
 
 echo ""
 echo "=== Tests ==="

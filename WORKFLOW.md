@@ -212,8 +212,10 @@ ADRs), and `/decide-semver` (a manual release helper, see Versioning).
 - **Goal:** Gate the push locally before it reaches CI.
 - **Pipeline / Git:** `/pr`'s push fires the Husky **pre-push** hook
   (`.husky/pre-push`), which runs, in order: skill & rule symlink checks →
-  **Archgate** compliance (`scripts/archgate-ci.mjs`) → **Trivy** security scan →
-  **unit tests** (`npm test`). It aborts on the first failure.
+  **plugin artefact sync** (`check:plugins`) → **Archgate** compliance
+  (`scripts/archgate-ci.mjs`) → **Trivy** security scan → **typecheck**
+  (`tsc --noEmit`, `GEN-003` — Vitest/esbuild does not type-check) → **unit tests**
+  (`npm test`). It aborts on the first failure.
 - **Done when:** Every pre-push gate is green; otherwise the push is aborted.
 
 ### 8. Push

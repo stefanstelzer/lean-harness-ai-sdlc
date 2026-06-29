@@ -34,6 +34,7 @@
   "homepage": "https://github.com/stefanstelzer/lean-harness-ai-sdlc#readme",
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -50,7 +51,7 @@
     "check:links": "npm run check:skills && npm run check:rules",
     "build:plugins": "node scripts/build-plugins.mjs",
     "check:plugins": "sh scripts/check-plugins.sh",
-    "verify": "npm run lint && npm run check:links && npm run check:plugins && npm run archgate:ci && npm test",
+    "verify": "npm run lint && npm run typecheck && npm run check:links && npm run check:plugins && npm run archgate:ci && npm test",
     "prepare": "husky"
   },
   "devDependencies": {

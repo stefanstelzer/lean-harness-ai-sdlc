@@ -31,3 +31,11 @@ Identify the **seam** where the fix and its test belong (prefer the existing, hi
 
 Hand the next phase a crisp brief: observed vs. expected, the deterministic repro, the root cause (file/seam), the fix seam, and the scope. The prompt and `/tdd` take it from here — `/tdd` writes the repro as the first failing test, then fixes the root cause.
 
+Also emit a **Manual-Test-Plan seed**: the deterministic repro restated as a short checklist of concrete, human-runnable verification steps (the failing action, then the now-expected result). The Bug flow has no PRD or plan, so — unlike the Feature flow, where `/prd-to-plan` seeds the per-phase Manual Test Plan — the only `GEN-006` Manual-Test-Plan surface is the **PR body**, which `/pr` would otherwise author from scratch. The repro *is* the verification, so capture it here for `/pr` to drop under `## Manual Test Plan`. Example:
+
+```
+### Manual Test Plan (seed)
+- [ ] Reproduce: <steps that triggered the defect> — observe <wrong behaviour>.
+- [ ] After the fix: repeat the steps — observe <correct behaviour> instead.
+```
+

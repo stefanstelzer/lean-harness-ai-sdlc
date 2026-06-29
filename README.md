@@ -237,10 +237,11 @@ nvm use
 npm install            # runs "prepare" → installs husky hooks
 
 # 3. Run the local gate (what pre-push enforces)
-npm run verify         # lint + symlink checks + archgate + tests
+npm run verify         # lint + typecheck + symlink checks + archgate + tests
 
 # Individual gates
 npm run lint
+npm run typecheck      # tsc --noEmit (Vitest/esbuild does not type-check) — GEN-003
 npm run check:links    # skill + rule symlink invariants
 npm run archgate       # architecture-fitness check (see .archgate/adrs/)
 npm test               # unit + smoke + e2e
