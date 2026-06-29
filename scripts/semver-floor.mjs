@@ -2,10 +2,10 @@
 /**
  * Deterministic SemVer FLOOR from Conventional Commits (single package).
  *
- * This is the guardrail under the `decide-semver` skill (see release.yml): the
+ * This is the guardrail under the `decide-semver` skill (see GEN-007): the
  * floor is computed mechanically from the commit messages since the last `v*`
  * git tag, and the agent may only RAISE the bump (e.g. flag an undeclared
- * breaking change), never lower it. The workflow takes max(floor, agent), so the
+ * breaking change), never lower it. A release takes max(floor, agent), so the
  * version number stays reproducible regardless of what the agent returns.
  *
  *   fix: / perf: / anything            -> patch

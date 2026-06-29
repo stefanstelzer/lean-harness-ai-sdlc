@@ -77,7 +77,7 @@ All suites run under **Vitest** (`vitest.config.ts`):
 | `.archgate/rules.d.ts`                 | Generated rule type defs (do not edit).                               |
 | [`scripts/`](../scripts)               | `check-skill-symlinks.sh`, `check-rule-symlinks.sh`, `archgate-ci.mjs`, `semver-floor.mjs`, `run-trivy.sh`. |
 | [`.husky/`](../.husky)                 | `commit-msg` (commitlint) + `pre-push` (symlink checks → archgate → trivy → tests). |
-| [`.github/workflows/`](../.github/workflows) | `push.yml`, `pr.yml`, `nightly.yml`, `release.yml`.            |
+| [`.github/workflows/`](../.github/workflows) | `ci.yml` — the single push/PR pipeline.                       |
 
 The symlink invariant (`.agents/` ↔ `.claude/`) is enforced by
 `npm run check:links` in the pre-push hook and CI. See [`AGENTS.md`](../AGENTS.md)

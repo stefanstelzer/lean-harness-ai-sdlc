@@ -10,9 +10,7 @@ harness lints, tests, scans and ships on every change.
 
 <br />
 
-[![Push](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/push.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/push.yml)
-[![PR](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/pr.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/pr.yml)
-[![Nightly](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/nightly.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/nightly.yml)
+[![CI](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/ci.yml/badge.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/stefanstelzer/lean-harness-ai-sdlc/branch/main/graph/badge.svg)](https://codecov.io/gh/stefanstelzer/lean-harness-ai-sdlc)
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
@@ -171,17 +169,15 @@ template. New boundaries require a new ADR; author it with `/adr-author`.
 
 ## Versioning & release
 
-Conventional Commits (`GEN-001`) drive automatic versioning. On merge to `main`,
-[`release.yml`](./.github/workflows/release.yml):
+Conventional Commits (`GEN-001`) drive versioning, but releases are cut
+**manually** — there is no release pipeline. When it's time to ship, a maintainer:
 
 1. computes a **deterministic semver floor** from the commits since the last
    `v*` tag (`scripts/semver-floor.mjs`): `fix:` → patch, `feat:` → minor,
    `<type>!:` / `BREAKING CHANGE` → major;
-2. optionally runs `/decide-semver` headless (if `ANTHROPIC_API_KEY` is set),
-   which may **raise** — never lower — the floor;
-3. bumps `package.json`, cuts a `vX.Y.Z` tag + GitHub Release, and pushes one
-   `chore(release): bump … [skip ci]` commit (the sole exception to the
-   never-commit-to-`main` rule; see `GEN-007`).
+2. optionally runs `/decide-semver`, which may **raise** — never lower — the floor;
+3. bumps `package.json`, updates `CHANGELOG.md`, tags `vX.Y.Z`, and lands it via a
+   normal PR. No machine commits to `main` (see `GEN-007`).
 
 `skills-lock.json` (`{ "version": 1, "skills": {} }`) is the lockfile for any
 externally-vendored skills. All skills here are authored locally, so it is empty;

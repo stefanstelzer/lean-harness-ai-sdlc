@@ -4,7 +4,7 @@ description = "Decide the semantic-version bump for the release by reviewing the
 prompt = '''
 # Decide SemVer
 
-Decide the release's version bump for this single package (`GEN-007`). The release pipeline already computes a **floor** from the Conventional-Commits since the last tag (`scripts/semver-floor.mjs`); this skill reviews the actual diff and may only **raise** that floor when the changes prove the commit messages understated the impact. It never lowers it.
+Decide the release's version bump for this single package (`GEN-007`). Releases are cut manually — `scripts/semver-floor.mjs` computes a deterministic **floor** from the Conventional-Commits since the last tag, and this skill reviews the actual diff and may only **raise** that floor when the changes prove the commit messages understated the impact. It never lowers it.
 
 ## Process
 

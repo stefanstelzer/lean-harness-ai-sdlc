@@ -29,7 +29,7 @@ a plain symlink, so a generator does the projection instead.
 The generated paths are wiped and rebuilt on every run, so deletions in the source
 propagate and no stale artefacts survive. `scripts/check-plugins.sh`
 (`npm run check:plugins`) re-runs the generator and fails if the tree drifts; it is
-wired into `npm run verify`, the pre-push hook, and CI (`push.yml` / `pr.yml`).
+wired into `npm run verify`, the pre-push hook, and CI (`ci.yml`).
 
 ## File map: managed vs hand-authored
 

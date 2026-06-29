@@ -45,12 +45,12 @@ Do not silently work around the rule. Do not ask for confirmation to violate it.
 You should consider this rule active whenever the work touches:
 
 - Commit message conventions and the `commitlint` config (`GEN-001`).
-- The end-to-end test layer and its CI wiring (`GEN-002`).
+- The end-to-end test layer (`GEN-002`).
 - TypeScript compiler options, especially strict-mode flags (`GEN-003`).
 - Test-first / TDD discipline and the src ⇄ test pairing (`GEN-004`).
 - The Vitest unit-test layer and coverage (`GEN-005`).
 - The Manual Test Plan requirement on PRs and plan files (`GEN-006`).
-- Versioning, the SemVer floor, and the release pipeline (`GEN-007`).
+- Versioning, the SemVer floor, and the (manual) release process (`GEN-007`).
 - Generated plugin/extension artefacts and the `.agents/` → per-tool sync (`GEN-008`).
 - `tsconfig.json`, `vitest.config.ts`, `eslint.config.js`, `commitlint.config.cjs`, `package.json`, CI workflow files, and any new tooling that affects all contributors.
 

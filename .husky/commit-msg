@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
-# Enforce Conventional Commits so the changelog & release pipeline stay automatic.
+# Enforce Conventional Commits so the changelog & SemVer bump derive from history.
 npx --no-install commitlint --edit "$1"

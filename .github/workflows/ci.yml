@@ -1,15 +1,23 @@
-name: PR Pipeline
+name: CI Pipeline
 
-# Full gate before merge (single package, no app matrix). Same checks as the
-# push pipeline so the required "Verify" status check is produced on every PR.
+# The single pipeline for this repo: runs on every push and every pull request
+# (single package, no app matrix). It produces the required "Verify" status check
+# that the protect-main ruleset gates on. There is no separate release, nightly,
+# or push/PR split — this one workflow is the whole CI surface.
+#
+# Fast gates: lint -> symlink checks -> plugin sync -> archgate -> Trivy ->
+# build -> unit + smoke tests with coverage. The e2e suite (tests/e2e) is run
+# on demand, not here (see GEN-002).
 on:
+  push:
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: pr-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -48,8 +56,9 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Test (with coverage)
-        run: npm run test:coverage
+      - name: Test (unit + smoke, with coverage)
+        # e2e (tests/e2e) is intentionally excluded from CI — see GEN-002.
+        run: npx vitest run --coverage tests/unit tests/smoke
 
       - name: Coverage summary
         if: always()

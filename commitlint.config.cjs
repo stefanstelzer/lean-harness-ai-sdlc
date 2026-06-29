@@ -1,7 +1,7 @@
 /**
  * Conventional Commits configuration.
  * See WORKFLOW.md — every commit on every flow follows this convention so the
- * changelog and release pipeline can be generated automatically.
+ * changelog and the SemVer bump level can be derived mechanically from history.
  */
 module.exports = {
   extends: ['@commitlint/config-conventional'],
