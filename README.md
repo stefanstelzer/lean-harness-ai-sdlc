@@ -52,6 +52,19 @@ every stage. See [WORKFLOW.md](./WORKFLOW.md).
 > dogfood: a tiny feature-flag library the harness uses to prove every gate
 > actually runs and stays green.
 
+The harness doesn't just list rules — it **guides how agents implement**:
+
+- **Rules wired to ADRs** — agents plan and edit against the ADRs in `.archgate/adrs/`.
+  The `*-adrs` router rules load them at runtime, so an agent _refuses_ a change that would
+  break an invariant (soft refusal), and archgate re-checks it mechanically on push and in CI
+  (hard refusal). See [Architecture governance](#architecture-governance).
+- **Tracer-bullet first** — `/prd-to-plan` orders work **risk-first** into deep-module phases;
+  **Phase 1 is the tracer bullet**, the riskiest module that proves the hardest path
+  end-to-end before the rest follow.
+- **Red → green → refactor** — `/tdd` builds every change test-first in **vertical slices**.
+  This loop is the binding template for _all_ code (Feature **and** Bug flows), enforced by
+  `GEN-004` (every `src/` module needs a matching test).
+
 ## Repository layout
 
 ```text
@@ -94,20 +107,20 @@ drift. `scripts/check-skill-symlinks.sh` and `scripts/check-rule-symlinks.sh`
 The 12 skills live under [`.agents/skills/`](./.agents/skills/) and are invoked
 as `/goal`, `/tdd`, etc.
 
-| Skill                    | Flow station        | Purpose                                                        |
-| ------------------------ | ------------------- | ------------------------------------------------------------- |
-| `/discovery`             | Feature front       | Explore the problem, frame scope, write `prd/PRD-<n>-<slug>.md` |
-| `/goal`                  | Bug / CR front      | Sharpen a request or defect into a testable goal statement    |
-| `/grill-me-with-context` | PRD / Plan review   | Pressure-test a PRD/plan against the codebase + ADRs          |
-| `/prd-to-plan`           | Plan                | Turn an approved PRD into `plans/PLN-<n>-<slug>.md`           |
-| `/tdd`                   | Agent / Artefact    | Implement via strict red-green-refactor; lands the spec first |
-| `/bug-analysis`          | Bug investigation   | Reproduce, isolate root cause, write a failing test first     |
-| `/reviewer`              | Commit (archgate)   | Gate the diff on correctness, architecture, tests             |
-| `/pr`                    | Commit → PR         | Commit, push, open the PR with `--fill-verbose`, drive CI green |
-| `/lessons-learned`       | Commit (archgate)   | Feed retrospective insight back into ADRs / agent-memory      |
-| `/adr-author`            | PRD review          | Write/amend ADRs in `.archgate/adrs/` (+ optional rules)      |
-| `/write-better-skill`    | Meta               | How to author skills for this harness (frontmatter, patterns) |
-| `/decide-semver`         | Release            | Read the diff since last tag and may raise the semver floor    |
+| Skill                    | Flow station      | Purpose                                                                                        |
+| ------------------------ | ----------------- | ---------------------------------------------------------------------------------------------- |
+| `/discovery`             | Feature front     | Explore the problem, frame scope, write `prd/PRD-<n>-<slug>.md`                                |
+| `/goal`                  | Bug / CR front    | Sharpen a request or defect into a testable goal statement                                     |
+| `/grill-me-with-context` | PRD / Plan review | Pressure-test a PRD/plan against the codebase + ADRs                                           |
+| `/prd-to-plan`           | Plan              | Decompose an approved PRD **risk-first** into deep-module phases; Phase 1 = **tracer bullet**  |
+| `/tdd`                   | Agent / Artefact  | Implement test-first in **vertical slices** (**red → green → refactor**); lands the spec first |
+| `/bug-analysis`          | Bug investigation | Reproduce, isolate root cause, write a failing test first                                      |
+| `/reviewer`              | Commit (archgate) | Gate the diff on correctness, architecture, tests                                              |
+| `/pr`                    | Commit → PR       | Commit, push, open the PR with `--fill-verbose`, drive CI green                                |
+| `/lessons-learned`       | Commit (archgate) | Feed retrospective insight back into ADRs / agent-memory                                       |
+| `/adr-author`            | PRD review        | Write/amend ADRs in `.archgate/adrs/` (+ optional rules)                                       |
+| `/write-better-skill`    | Meta              | How to author skills for this harness (frontmatter, patterns)                                  |
+| `/decide-semver`         | Release           | Read the diff since last tag and may raise the semver floor                                    |
 
 ## Install as a plugin
 
@@ -150,8 +163,39 @@ Architecture Decision Records (ADRs) live in
 [`.archgate/adrs/`](./.archgate/adrs/) and are enforced by
 [archgate](https://cli.archgate.dev/) on every push and in CI. Each ADR is a
 `<ID>-<slug>.md` (with YAML frontmatter: `id`, `title`, `status`, `domain`,
-`rules`) usually paired with an executable `<ID>-<slug>.rules.ts`. The `*-adrs`
-agent rules read the `*.md` files at runtime rather than duplicating them.
+`rules`) usually paired with an executable `<ID>-<slug>.rules.ts`.
+
+Enforcement runs in two phases that share the same source of truth:
+
+- **Authoring time — soft refusal.** The `*-adrs` agent rules (`.agents/rules/`) are thin
+  routers: they glob `.archgate/adrs/*.md`, keep the ones matching their `domain:`, and load
+  the ADR text **at runtime** (never duplicating it). An agent about to break a `Decision` or
+  Do's-and-Don'ts bullet refuses, cites the ADR id, and offers to reformulate or amend the ADR
+  via `/adr-author`.
+- **Push & CI time — hard refusal.** The paired `<ID>-<slug>.rules.ts` run under archgate
+  (`scripts/archgate-ci.mjs`) in `.husky/pre-push` and in CI. An `error`-severity violation
+  (e.g. `arch001/index-only-reexports`) blocks the push and the merge; warnings
+  (e.g. `gen004/src-module-has-test`) stay visible.
+
+```mermaid
+flowchart LR
+  ADR["ADR (.md) — single source of truth<br/>Decision · Do's/Don'ts · Consequences<br/>frontmatter: domain, rules"]
+
+  subgraph SOFT["Authoring time · soft refusal"]
+    RULES[".agents/rules/*-adrs.md<br/>routers: glob by domain,<br/>load ADR at runtime"]
+    AGENT["Agent plans / edits"]
+  end
+
+  subgraph HARD["Push and CI time · hard refusal"]
+    ARCH["paired .rules.ts via archgate<br/>.husky/pre-push + CI"]
+    GATE{"error?"}
+  end
+
+  ADR --> RULES --> AGENT -->|commit| ARCH --> GATE
+  GATE -->|yes| BLOCK["push / merge blocked"]
+  GATE -->|no| MERGE["merge"]
+  AGENT -.->|"/adr-author amends the ADR"| ADR
+```
 
 ```bash
 npm run archgate                 # run ADR compliance checks (also in pre-push + CI)
@@ -159,10 +203,10 @@ npx -y archgate adr list         # list all ADRs
 npx -y archgate check --adr GEN-003   # check a specific ADR
 ```
 
-| Domain                  | ADRs                                                                                                                                                                                                                                                |
-| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Architecture** (ARCH) | `ARCH-001` Layered source architecture (`index.ts` re-exports only; `types` ← impl ← `index` layering)                                                                                                                                              |
-| **General** (GEN)       | `GEN-001` Conventional Commits · `GEN-002` E2E tests in CI · `GEN-003` TypeScript strict · `GEN-004` TDD discipline · `GEN-005` Vitest unit tests · `GEN-006` Manual Test Plan required · `GEN-007` Versioning & release · `GEN-008` Generated plugin artefacts                          |
+| Domain                  | ADRs                                                                                                                                                                                                                                                            |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Architecture** (ARCH) | `ARCH-001` Layered source architecture (`index.ts` re-exports only; `types` ← impl ← `index` layering)                                                                                                                                                          |
+| **General** (GEN)       | `GEN-001` Conventional Commits · `GEN-002` E2E tests in CI · `GEN-003` TypeScript strict · `GEN-004` TDD discipline · `GEN-005` Vitest unit tests · `GEN-006` Manual Test Plan required · `GEN-007` Versioning & release · `GEN-008` Generated plugin artefacts |
 
 `GEN-006` has no executable rule — it is a manual gate enforced via the PR
 template. New boundaries require a new ADR; author it with `/adr-author`.
@@ -193,10 +237,11 @@ nvm use
 npm install            # runs "prepare" → installs husky hooks
 
 # 3. Run the local gate (what pre-push enforces)
-npm run verify         # lint + symlink checks + archgate + tests
+npm run verify         # lint + typecheck + symlink checks + archgate + tests
 
 # Individual gates
 npm run lint
+npm run typecheck      # tsc --noEmit (Vitest/esbuild does not type-check) — GEN-003
 npm run check:links    # skill + rule symlink invariants
 npm run archgate       # architecture-fitness check (see .archgate/adrs/)
 npm test               # unit + smoke + e2e
