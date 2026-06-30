@@ -20,4 +20,21 @@ describe('feature rollout journey', () => {
     // The same evaluation is reproducible across invocations.
     expect(full.isEnabled('new-checkout', user)).toBe(true);
   });
+
+  it('keeps a dependent feature dark until its prerequisite is live', () => {
+    const user = { userId: 'long-lived-user' };
+
+    // `upsell` depends on `new-checkout`. While checkout is dark, the upsell
+    // must stay dark too — even though it is itself enabled.
+    const staged = new FeatureFlags([
+      { key: 'new-checkout', enabled: false },
+      { key: 'upsell', enabled: true, requires: ['new-checkout'] },
+    ]);
+    expect(staged.isEnabled('upsell', user)).toBe(false);
+
+    // Light up the prerequisite for everyone; the dependent feature follows.
+    staged.register({ key: 'new-checkout', enabled: true, rollout: 100 });
+    expect(staged.isEnabled('upsell', user)).toBe(true);
+    expect(staged.isEnabled('upsell', user)).toBe(true);
+  });
 });
