@@ -154,12 +154,16 @@ PR (see `GEN-007`). No machine writes to `main`.
 Every PR MUST have a non-empty body that surfaces the commits it contains. GitHub
 does not auto-populate the PR body from commit messages — you must opt in.
 
-- **Multi-commit branches**: use `gh pr create --fill-verbose`. This concatenates
-  every commit's subject and body into the PR body, so the carefully written
-  commit messages (including any `Co-Authored-By` trailers) are visible.
-- **Single-commit branches**: use `gh pr create --fill`.
-- **Manual `--body`**: the body MUST include exactly these three H2 sections, in
-  this order: `## Summary`, `## Commits`, and `## Manual Test Plan`.
+- **Every PR body MUST include exactly these three H2 sections, in this order**:
+  `## Summary`, `## Commits`, and `## Manual Test Plan` (the last with at least one
+  filled `- [ ]` step — `GEN-006`).
+- **`gh pr create --fill` / `--fill-verbose` populate the body from commit
+  subjects/bodies and ignore `.github/PULL_REQUEST_TEMPLATE.md`** — so they do **not**
+  add a `## Manual Test Plan` on their own. Use them only to seed `## Commits` (keeping
+  the commit messages and any `Co-Authored-By` trailers visible), then add the Manual
+  Test Plan explicitly with `--body-file` or a follow-up `gh pr edit --body-file`.
+- **Manual `--body` / `--body-file`**: write all three H2 sections directly. This is
+  the reliable path, since it does not depend on the template being applied.
 - **`## Manual Test Plan`**: this section MUST contain at least one filled
   `- [ ] <step>` checklist bullet describing a concrete, human-executable
   verification step. Placeholder bullets (`<step>`, `<TODO>`, …) are not
