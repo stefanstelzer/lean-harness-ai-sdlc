@@ -1,4 +1,4 @@
-<!-- Generated/assisted via the /push-pr skill. See WORKFLOW.md and AGENTS.md. -->
+<!-- Generated/assisted via the /pr skill. See WORKFLOW.md and AGENTS.md. -->
 
 ## Summary
 
@@ -19,7 +19,7 @@ so this section is auto-populated from each commit's subject and body
 <!--
 At least one concrete, human-executable verification step is REQUIRED
 (GEN-006). Placeholders like `<step>` or `TODO` are not acceptable — the
-/push-pr skill checks this before declaring the PR done.
+/pr skill checks this before declaring the PR done.
 -->
 
 - [ ] Run `npm run verify` locally and confirm lint, symlink checks, archgate and tests all pass.
