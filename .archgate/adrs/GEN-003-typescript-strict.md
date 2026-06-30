@@ -4,6 +4,10 @@ title: TypeScript strict mode
 status: accepted
 domain: general
 rules: true
+files:
+  - "src/**"
+  - "tests/**"
+  - "tsconfig.json"
 ---
 
 # TypeScript strict mode

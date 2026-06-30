@@ -144,7 +144,7 @@ flowchart TD
 | 4   | Agent     | `/tdd` (red → green)                                    | `GEN-004`, `GEN-005`, `GEN-003`, `ARCH-001` | PRD + plan                        | **Unit** (`tests/unit/`)       | —                         | opens `feat/<slug>`; **spec = first commit** |
 | 5   | Artefact  | `/tdd` (refactor while green)                           | `ARCH-001`, area ADRs                      | updated docs                       | Unit                           | —                         | —                                    |
 | 6   | Commit    | `/reviewer` → `/lessons-learned` → `/pr` (commit)      | archgate = all ADRs; `GEN-001`            | ADRs / agent-memory                | Unit                           | local archgate            | Conventional-Commits commit          |
-| 7   | Hooks     | `/pr` (push fires the hook)                             | symlink invariants, archgate, `GEN-005`   | —                                  | Unit                           | `.husky/pre-push`         | pre-push gate                        |
+| 7   | Hooks     | `/pr` (push fires the hook)                             | symlink invariants, archgate, `GEN-005`   | —                                  | Unit · Smoke                   | `.husky/pre-push`         | pre-push gate                        |
 | 8   | Push      | `/pr`                                                   | `GEN-005`                                  | —                                  | Unit · Smoke (`tests/smoke/`)  | `ci.yml`                  | branch pushed                        |
 | 9   | PR        | `/pr` + human review                                    | `AGENTS.md` PR Descriptions, `GEN-006`     | PR body (Summary/Commits/Manual Test Plan) | — (e2e run on demand, `GEN-002`) | `ci.yml`                | PR opened, merged on green           |
 
@@ -214,8 +214,9 @@ ADRs), and `/decide-semver` (a manual release helper, see Versioning).
   (`.husky/pre-push`), which runs, in order: skill & rule symlink checks →
   **plugin artefact sync** (`check:plugins`) → **Archgate** compliance
   (`scripts/archgate-ci.mjs`) → **Trivy** security scan → **typecheck**
-  (`tsc --noEmit`, `GEN-003` — Vitest/esbuild does not type-check) → **unit tests**
-  (`npm test`). It aborts on the first failure.
+  (`tsc --noEmit`, `GEN-003` — Vitest/esbuild does not type-check) → **unit + smoke
+  tests** (`npm run test:unit && npm run test:smoke`, mirroring CI — e2e is run on
+  demand, not gated here, per `GEN-002`). It aborts on the first failure.
 - **Done when:** Every pre-push gate is green; otherwise the push is aborted.
 
 ### 8. Push

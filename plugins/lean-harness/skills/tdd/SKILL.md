@@ -40,7 +40,7 @@ vertical (do this):  test1→impl1, test2→impl2, test3→impl3, …
 `/tdd` is where the git work starts — it is the first skill to touch the repo, so it opens the branch the feature will live on.
 
 - **Create the feature branch off `main`** — `git checkout -b feat/<slug>` (use `fix/<slug>` for a bug). Never work on `main` (`AGENTS.md` › Branch Policy).
-- **Make the first commit the spec.** Commit the PRD (`prd/PRD-<n>-*.md`) and the plan (`plans/PLN-<n>-*.md`) that `/discovery` and `/prd-to-plan` produced — e.g. `docs(plan): PRD + plan for <feature>` — before any test or implementation. Landing the agreed contract first makes every later diff reviewable against it. (For a standalone change with no PRD/plan, still branch off `main` first; there is simply no spec commit to make.)
+- **Make the first commit the spec.** Commit the PRD (`prd/PRD-<n>-*.md`) and the plan (`plans/PLN-<n>-*.md`) that `/discovery` and `/prd-to-plan` produced — e.g. `docs(plan): add the PRD + plan for <feature>` — before any test or implementation. Landing the agreed contract first makes every later diff reviewable against it. (For a standalone change with no PRD/plan, still branch off `main` first; there is simply no spec commit to make.)
 - **Load the plan _and_ its upstream PRD.** Open the plan and follow its `**Upstream PRD:**` link (`GEN-006` requires every plan to carry one); keep both in context as you implement, so each phase is built against the requirements it descends from, not the plan alone.
 
 **Done when** the branch exists off `main` and — when a PRD/plan exist — its first commit contains them and nothing else.

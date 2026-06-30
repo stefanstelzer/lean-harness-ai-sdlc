@@ -4,6 +4,9 @@ title: Plan files and PRs require a Manual Test Plan, and plans link their upstr
 status: accepted
 domain: general
 rules: true
+files:
+  - "plans/**"
+  - "prd/**"
 ---
 
 # Plan files and PRs require a Manual Test Plan, and plans link their upstream PRD
