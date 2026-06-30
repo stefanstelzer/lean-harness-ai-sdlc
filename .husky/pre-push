@@ -31,7 +31,10 @@ echo "=== TypeScript Typecheck ==="
 npm run typecheck || { echo "❌ Typecheck failed. Push aborted."; exit 1; }
 
 echo ""
-echo "=== Tests ==="
-npm test || { echo "❌ Tests failed. Push aborted."; exit 1; }
+echo "=== Tests (unit + smoke) ==="
+# Mirror CI: run the unit + smoke layers (GEN-002 keeps e2e on-demand, not a merge
+# gate — run it yourself with `npm run test:e2e`). Abort on the first failing layer.
+npm run test:unit || { echo "❌ Unit tests failed. Push aborted."; exit 1; }
+npm run test:smoke || { echo "❌ Smoke tests failed. Push aborted."; exit 1; }
 
 echo "✅ All checks passed."

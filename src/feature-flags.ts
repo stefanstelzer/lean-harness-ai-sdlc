@@ -23,7 +23,20 @@ export class FeatureFlags {
     if (flag.rollout !== undefined && (flag.rollout < 0 || flag.rollout > 100)) {
       throw new Error(`Rollout for "${flag.key}" must be between 0 and 100`);
     }
+    // Tentatively apply, then reject any prerequisite edge that closes a cycle
+    // over the resulting graph (including on overwrite). A successfully
+    // registered instance is therefore always acyclic and safe to evaluate.
+    const previous = this.flags.get(flag.key);
     this.flags.set(flag.key, flag);
+    const cycleKey = this.findCycleFrom(flag.key);
+    if (cycleKey !== undefined) {
+      if (previous === undefined) {
+        this.flags.delete(flag.key);
+      } else {
+        this.flags.set(flag.key, previous);
+      }
+      throw new Error(`Prerequisite cycle detected at "${cycleKey}"`);
+    }
     return this;
   }
 
@@ -44,18 +57,68 @@ export class FeatureFlags {
     if (!flag || !flag.enabled) {
       return false;
     }
-    if (flag.rollout === undefined) {
-      return true;
-    }
-    if (flag.rollout >= 100) {
-      return true;
-    }
-    if (flag.rollout <= 0) {
+    if (!passesRollout(flag, context)) {
       return false;
     }
-    const bucket = hashToBucket(`${flag.key}:${context.userId ?? 'anonymous'}`);
-    return bucket < flag.rollout;
+    // A flag is enabled only when every prerequisite is also enabled for the
+    // same context. Prerequisites resolve through this same public path, so
+    // all-of, transitive chains, and rollout-gated prerequisites all fall out.
+    // Unknown keys evaluate `false` (fail closed). The graph is acyclic by
+    // construction (see `register`), so this recursion always terminates.
+    if (flag.requires !== undefined) {
+      for (const dependency of flag.requires) {
+        if (!this.isEnabled(dependency, context)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
+
+  /**
+   * Walk the prerequisite graph from `start`, following `requires` edges among
+   * registered flags. Returns the key at which a cycle closes, or `undefined`
+   * when the reachable sub-graph is acyclic. Edges to unregistered keys are
+   * inert (a forward reference is allowed; it simply fails closed until the key
+   * exists).
+   */
+  private findCycleFrom(start: string): string | undefined {
+    const onStack = new Set<string>();
+    const visit = (key: string): string | undefined => {
+      if (onStack.has(key)) {
+        return key;
+      }
+      const flag = this.flags.get(key);
+      if (!flag || flag.requires === undefined) {
+        return undefined;
+      }
+      onStack.add(key);
+      for (const dependency of flag.requires) {
+        const hit = visit(dependency);
+        if (hit !== undefined) {
+          return hit;
+        }
+      }
+      onStack.delete(key);
+      return undefined;
+    };
+    return visit(start);
+  }
+}
+
+/**
+ * Whether a flag's own percentage rollout admits the given context. This is the
+ * flag's *own* enablement decision, before prerequisites are considered.
+ */
+function passesRollout(flag: FeatureFlag, context: EvaluationContext): boolean {
+  if (flag.rollout === undefined || flag.rollout >= 100) {
+    return true;
+  }
+  if (flag.rollout <= 0) {
+    return false;
+  }
+  const bucket = hashToBucket(`${flag.key}:${context.userId ?? 'anonymous'}`);
+  return bucket < flag.rollout;
 }
 
 /**

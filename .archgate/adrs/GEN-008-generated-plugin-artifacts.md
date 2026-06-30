@@ -4,6 +4,13 @@ title: Generated plugin artefacts are projected from .agents, never hand-edited
 status: accepted
 domain: general
 rules: false
+files:
+  - ".agents/**"
+  - "plugins/**"
+  - "commands/**"
+  - "GEMINI.md"
+  - "AGENTS.md"
+  - "WORKFLOW.md"
 ---
 
 # Generated plugin artefacts are projected from .agents, never hand-edited

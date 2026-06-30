@@ -4,6 +4,9 @@ title: End-to-end tests exist and run in CI
 status: accepted
 domain: general
 rules: true
+files:
+  - "tests/e2e/**"
+  - "package.json"
 ---
 
 # End-to-end tests exist and run in CI

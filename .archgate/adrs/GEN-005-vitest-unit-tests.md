@@ -4,6 +4,10 @@ title: Vitest as the unit-test runner
 status: accepted
 domain: general
 rules: true
+files:
+  - "tests/**"
+  - "vitest.config.ts"
+  - "package.json"
 ---
 
 # Vitest as the unit-test runner

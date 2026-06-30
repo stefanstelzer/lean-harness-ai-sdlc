@@ -4,6 +4,9 @@ title: TDD discipline — red, green, refactor
 status: accepted
 domain: general
 rules: true
+files:
+  - "src/**"
+  - "tests/**"
 ---
 
 # TDD discipline — red, green, refactor

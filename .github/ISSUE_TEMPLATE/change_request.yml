@@ -7,7 +7,7 @@ body:
     attributes:
       value: |
         This maps to the **Change Request flow** in [WORKFLOW.md](../../WORKFLOW.md):
-        `/goal` → `/tdd` → `/reviewer` → `/push-pr`.
+        `/goal` → `/tdd` → `/reviewer` → `/pr`.
   - type: textarea
     id: requirement
     attributes:

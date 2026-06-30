@@ -74,6 +74,89 @@ describe('FeatureFlags', () => {
       expect(ratio).toBeLessThan(0.4);
     });
   });
+
+  describe('prerequisites', () => {
+    it('rejects a direct self-cycle at registration', () => {
+      expect(() => new FeatureFlags([{ key: 'a', enabled: true, requires: ['a'] }])).toThrow(
+        /cycle.*"a"|"a".*cycle/i,
+      );
+    });
+
+    it('rejects an indirect cycle at registration', () => {
+      const flags = new FeatureFlags([{ key: 'a', enabled: true, requires: ['b'] }]);
+      expect(() => flags.register({ key: 'b', enabled: true, requires: ['a'] })).toThrow(/cycle/i);
+    });
+
+    it('rejects an overwrite that closes a cycle', () => {
+      const flags = new FeatureFlags([
+        { key: 'a', enabled: true },
+        { key: 'b', enabled: true, requires: ['a'] },
+      ]);
+      // Re-registering 'a' to require 'b' would close a → b → a.
+      expect(() => flags.register({ key: 'a', enabled: true, requires: ['b'] })).toThrow(/cycle/i);
+      // …and the failed overwrite left the original 'a' intact and evaluable.
+      expect(flags.isEnabled('a')).toBe(true);
+    });
+
+    it('is enabled when its single prerequisite is enabled', () => {
+      const flags = new FeatureFlags([
+        { key: 'base', enabled: true },
+        { key: 'dependent', enabled: true, requires: ['base'] },
+      ]);
+      expect(flags.isEnabled('dependent')).toBe(true);
+    });
+
+    it('is disabled when a prerequisite is disabled', () => {
+      const flags = new FeatureFlags([
+        { key: 'base', enabled: false },
+        { key: 'dependent', enabled: true, requires: ['base'] },
+      ]);
+      expect(flags.isEnabled('dependent')).toBe(false);
+    });
+
+    it('requires ALL prerequisites to be enabled', () => {
+      const flags = new FeatureFlags([
+        { key: 'b', enabled: true },
+        { key: 'c', enabled: false },
+        { key: 'a', enabled: true, requires: ['b', 'c'] },
+      ]);
+      expect(flags.isEnabled('a')).toBe(false);
+      flags.register({ key: 'c', enabled: true });
+      expect(flags.isEnabled('a')).toBe(true);
+    });
+
+    it('resolves a transitive chain a -> b -> c', () => {
+      const flags = new FeatureFlags([
+        { key: 'c', enabled: true },
+        { key: 'b', enabled: true, requires: ['c'] },
+        { key: 'a', enabled: true, requires: ['b'] },
+      ]);
+      expect(flags.isEnabled('a')).toBe(true);
+      flags.register({ key: 'c', enabled: false });
+      expect(flags.isEnabled('a')).toBe(false);
+    });
+
+    it('gates the dependent flag by the prerequisite rollout for the same user', () => {
+      const flags = new FeatureFlags([
+        { key: 'base', enabled: true, rollout: 50 },
+        { key: 'dependent', enabled: true, requires: ['base'] },
+      ]);
+      // The dependent flag tracks the base flag's per-user decision exactly.
+      for (const userId of ['u1', 'u2', 'u3', 'u4', 'u5']) {
+        expect(flags.isEnabled('dependent', { userId })).toBe(flags.isEnabled('base', { userId }));
+      }
+    });
+
+    it('fails closed when a prerequisite key is unknown', () => {
+      const flags = new FeatureFlags([{ key: 'dependent', enabled: true, requires: ['ghost'] }]);
+      expect(flags.isEnabled('dependent')).toBe(false);
+    });
+
+    it('is unchanged for a flag with no prerequisites', () => {
+      const flags = new FeatureFlags([{ key: 'plain', enabled: true }]);
+      expect(flags.isEnabled('plain')).toBe(true);
+    });
+  });
 });
 
 describe('hashToBucket', () => {
