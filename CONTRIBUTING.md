@@ -28,8 +28,10 @@ with Claude Code, but you can follow the same stations by hand.)
 - **Branch** off `main`: `feat/…`, `fix/…`, `chore/…`, `docs/…`.
 - **Test-first.** No production code without a failing test (`/tdd`). Keep the
   suite green at every commit.
-- **Respect the architecture.** Honor the ADRs in [`docs/adr/`](./docs/adr/);
-  `npm run archgate` must pass. New boundaries need a new ADR.
+- **Respect the architecture.** Honor the ADRs in [`.archgate/adrs/`](./.archgate/adrs/);
+  `npm run archgate` must pass — it runs [archgate](https://archgate.dev), the
+  external architecture-governance CLI (see the
+  [README](./README.md#architecture-governance)). New boundaries need a new ADR.
 - **Conventional Commits.** Enforced by the `commit-msg` hook. Example:
   `feat(flags): add percentage rollout`.
 - **Run the gate before pushing.** `npm run verify`. The `pre-push` hook also

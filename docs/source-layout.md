@@ -36,7 +36,7 @@ src/
 
 `index.ts → feature-flags.ts → types.ts`. `src/types.ts` imports nothing
 internal; production code in `src/` must never import from `tests/`; relative
-imports must not escape `src/`. The archgate rule
+imports must not escape `src/`. The [archgate](https://archgate.dev) rule
 `.archgate/adrs/ARCH-001-layered-source-architecture.rules.ts` enforces this.
 
 ### Where to put what

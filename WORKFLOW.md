@@ -199,7 +199,8 @@ ADRs), and `/decide-semver` (a manual release helper, see Versioning).
 ### 6. Commit
 
 - **Goal:** Record a coherent, reviewed change locally.
-- **Skills (in order):** `/reviewer` — local archgate review of the diff;
+- **Skills (in order):** `/reviewer` — local [archgate](https://archgate.dev) (the
+  external architecture-governance CLI) review of the diff;
   `/lessons-learned` — capture learnings into `.claude/agent-memory/` and/or ADRs;
   **then** `/pr` commits the work (Conventional Commits). `/pr` always runs after
   `/reviewer` and `/lessons-learned`.
