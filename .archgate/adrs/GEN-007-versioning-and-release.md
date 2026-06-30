@@ -4,6 +4,10 @@ title: Versioning and release from Conventional Commits
 status: accepted
 domain: general
 rules: true
+files:
+  - "package.json"
+  - "CHANGELOG.md"
+  - "scripts/semver-floor.mjs"
 ---
 
 # Versioning and release from Conventional Commits

@@ -4,6 +4,8 @@ title: Layered source architecture with a one-way dependency direction
 status: accepted
 domain: architecture
 rules: true
+files:
+  - "src/**"
 ---
 
 # Layered source architecture with a one-way dependency direction
