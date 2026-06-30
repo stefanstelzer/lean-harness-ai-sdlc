@@ -22,8 +22,9 @@ the TypeScript library under [`src/`](../src) is the dogfood it ships.
 - **[WORKFLOW.md](../WORKFLOW.md)** — the three flows (Feature / Bug /
   Change-Request) and the shared delivery spine, with a per-phase table.
 - **[Architecture Decision Records](../.archgate/adrs/)** — the binding
-  architectural decisions (`ARCH-001`, `GEN-001`…`GEN-007`), enforced by archgate
-  on every push and in CI. See [`.archgate/adrs/README.md`](../.archgate/adrs/README.md)
+  architectural decisions (`ARCH-001`, `GEN-001`…`GEN-007`), enforced by
+  [archgate](https://archgate.dev) — the external architecture-governance CLI — on
+  every push and in CI. See [`.archgate/adrs/README.md`](../.archgate/adrs/README.md)
   for the authoring guide, template, and index.
 
 ## Diagrams

@@ -19,6 +19,7 @@ harness lints, tests, scans and ships on every change.
 [![Code style: Prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://prettier.io)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-43853d.svg)](./.nvmrc)
 [![Security: Trivy](https://img.shields.io/badge/security-Trivy-1904da.svg)](https://aquasecurity.github.io/trivy/)
+[![Architecture: archgate](https://img.shields.io/badge/architecture-archgate-1f6feb.svg)](https://archgate.dev)
 [![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-d97757.svg)](https://claude.com/claude-code)
 
 [![GitHub last commit](https://img.shields.io/github/last-commit/stefanstelzer/lean-harness-ai-sdlc.svg)](https://github.com/stefanstelzer/lean-harness-ai-sdlc/commits/main)
@@ -159,11 +160,19 @@ servers via `~/.gemini/config/mcp_config.json` if needed.
 
 ## Architecture governance
 
+This harness's architecture gate is powered by
+**[archgate](https://archgate.dev)** — an external, open-source (Apache-2.0) CLI
+that enforces your architecture and coding rules as executable guardrails. It is
+the engine behind the `.archgate/` directory and every `archgate` command in this
+repo, and it runs on demand through `npx -y archgate`, so there is nothing to
+install separately (see [Prerequisites](#prerequisites) and the
+[archgate CLI reference](https://cli.archgate.dev/)).
+
 Architecture Decision Records (ADRs) live in
-[`.archgate/adrs/`](./.archgate/adrs/) and are enforced by
-[archgate](https://cli.archgate.dev/) on every push and in CI. Each ADR is a
-`<ID>-<slug>.md` (with YAML frontmatter: `id`, `title`, `status`, `domain`,
-`rules`) usually paired with an executable `<ID>-<slug>.rules.ts`.
+[`.archgate/adrs/`](./.archgate/adrs/) and are enforced by archgate on every push
+and in CI. Each ADR is a `<ID>-<slug>.md` (with YAML frontmatter: `id`, `title`,
+`status`, `domain`, `rules`) usually paired with an executable
+`<ID>-<slug>.rules.ts`.
 
 Enforcement runs in two phases that share the same source of truth:
 
@@ -228,6 +237,19 @@ externally-vendored skills. All skills here are authored locally, so it is empty
 the mechanism is present for the future.
 
 ## Quickstart
+
+### Prerequisites
+
+- **Node.js ≥ 20** and npm — see [`.nvmrc`](./.nvmrc); run `nvm use`.
+- **[archgate](https://archgate.dev)** — the external CLI that powers this
+  harness's architecture governance: the `.archgate/` rules, the
+  `npm run archgate` gate, and the ADR enforcement in the pre-push hook and CI.
+  It is **not** a bundled npm dependency — every `archgate` script invokes it
+  through `npx -y archgate`, which downloads it on first use, so there is nothing
+  to install by hand. To pin a version or install it globally, follow the
+  [archgate CLI docs](https://cli.archgate.dev/).
+
+### Setup
 
 ```bash
 # 1. Use the right Node (see .nvmrc)

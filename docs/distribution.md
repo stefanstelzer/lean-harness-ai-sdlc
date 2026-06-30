@@ -12,7 +12,7 @@ The harness splits into two layers with different distribution mechanics:
    are self-contained instructions that any tool can run. They are *projected* into
    each tool's native format and distributed as a plugin/extension, so you can use
    them in a repo that does not otherwise adopt the harness.
-2. **Repo-bound machinery** — the canonical `.agents/` source, archgate governance
+2. **Repo-bound machinery** — the canonical `.agents/` source, [archgate](https://archgate.dev) governance
    (`.archgate/`), CI (`.github/`), git hooks (`.husky/`), and the helper scripts.
    This layer makes the workflow in `WORKFLOW.md` actually *run* and is installed
    into a repo with `/init-harness` (see below), not via the plugin system.

@@ -20,7 +20,7 @@ turns into:
 | LEAN principle             | How it shows up here                                                  |
 | -------------------------- | -------------------------------------------------------------------- |
 | Eliminate waste            | `/goal` and `/discovery` cut scope; "maximize the work not done" is rule #2. |
-| Build quality in           | TDD (`/tdd`); the archgate, Trivy and tests gate every push (`GEN-004`, `GEN-005`). |
+| Build quality in           | TDD (`/tdd`); the [archgate](https://archgate.dev), Trivy and tests gate every push (`GEN-004`, `GEN-005`). |
 | Amplify learning           | `/lessons-learned` turns each change into durable rules/ADRs (via `/adr-author`). |
 | Decide as late as possible | Discovery & ADRs defer commitment until the trade-offs are clear.    |
 | Deliver fast               | Small batches, short flows, automated gates → quick green PRs.       |

@@ -203,6 +203,10 @@ versioning (`GEN-007`).
 
 ### Architecture (enforced by archgate, `ARCH-001`)
 
+These rules are checked by [archgate](https://archgate.dev) — the external
+architecture-governance CLI run via `npm run archgate`; see the
+[README](./README.md#architecture-governance) for what it is and how it's pulled in.
+
 - `src/index.ts` only re-exports; dependency direction flows
   `index.ts → feature-flags.ts → types.ts`.
 - `src/types.ts` is the lowest layer — no internal imports.
