@@ -28,3 +28,6 @@ npm-debug.log*
 # Trivy cache
 .trivycache/
 trivy-results.sarif
+
+# Serena MCP workspace (local agent tooling, not part of the harness)
+.serena/
