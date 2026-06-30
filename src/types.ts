@@ -16,6 +16,13 @@ export interface FeatureFlag {
    * deterministic subset of users derived from the user id.
    */
   rollout?: number;
+  /**
+   * Optional prerequisite flag keys. The flag evaluates `true` only when it is
+   * itself enabled AND every listed prerequisite is enabled for the same
+   * evaluation context. Unknown keys fail closed; cycles are rejected at
+   * registration time.
+   */
+  requires?: string[];
 }
 
 /** Context used when evaluating a flag. */

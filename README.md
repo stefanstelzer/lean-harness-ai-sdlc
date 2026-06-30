@@ -260,6 +260,20 @@ const flags = new FeatureFlags([
 flags.isEnabled('new-checkout', { userId: 'user-42' }); // deterministic per user
 ```
 
+A flag can also declare **prerequisites** — it evaluates `true` only when it is
+itself enabled _and_ every prerequisite is enabled for the same context.
+Prerequisites resolve transitively and honour rollout; unknown keys fail closed,
+and cycles are rejected at registration time.
+
+```ts
+const flags = new FeatureFlags([
+  { key: 'new-checkout', enabled: true, rollout: 100 },
+  { key: 'checkout-upsell', enabled: true, requires: ['new-checkout'] },
+]);
+
+flags.isEnabled('checkout-upsell', { userId: 'user-42' }); // true only while new-checkout is too
+```
+
 ## Use this repo as a template
 
 1. Copy `.agents/`, `.claude/` (with its symlinks), `.archgate/`, `.husky/`,
