@@ -164,8 +164,9 @@ This harness's architecture gate is powered by
 **[archgate](https://archgate.dev)** — an external, open-source (Apache-2.0) CLI
 that enforces your architecture and coding rules as executable guardrails. It is
 the engine behind the `.archgate/` directory and every `archgate` command in this
-repo, and it runs on demand through `npx -y archgate`, so there is nothing to
-install separately (see [Prerequisites](#prerequisites) and the
+repo. It is pinned in `devDependencies` and installed by `npm install` / `npm ci`,
+so the lockfile locks its version and the gate runs the same archgate on every
+machine and in CI (see [Prerequisites](#prerequisites) and the
 [archgate CLI reference](https://cli.archgate.dev/)).
 
 Architecture Decision Records (ADRs) live in
@@ -185,6 +186,11 @@ Enforcement runs in two phases that share the same source of truth:
   (`scripts/archgate-ci.mjs`) in `.husky/pre-push` and in CI. An `error`-severity violation
   (e.g. `arch001/index-only-reexports`) blocks the push and the merge; warnings
   (e.g. `gen004/src-module-has-test`) stay visible.
+
+**Not every ADR clause is machine-checked.** archgate verifies structure and
+presence; the rest of an ADR's intent rests on the soft layer plus review. See
+[`docs/enforcement-coverage.md`](./docs/enforcement-coverage.md) for the per-ADR map
+of what is hard-enforced vs. prompt-only.
 
 ```mermaid
 flowchart LR
@@ -208,8 +214,8 @@ flowchart LR
 
 ```bash
 npm run archgate                 # run ADR compliance checks (also in pre-push + CI)
-npx -y archgate adr list         # list all ADRs
-npx -y archgate check --adr GEN-003   # check a specific ADR
+npx archgate adr list            # list all ADRs (uses the pinned devDependency)
+npx archgate check --adr GEN-003 # check a specific ADR
 ```
 
 | Domain                  | ADRs                                                                                                                                                                                                                                                            |
@@ -217,8 +223,10 @@ npx -y archgate check --adr GEN-003   # check a specific ADR
 | **Architecture** (ARCH) | `ARCH-001` Layered source architecture (`index.ts` re-exports only; `types` ← impl ← `index` layering)                                                                                                                                                          |
 | **General** (GEN)       | `GEN-001` Conventional Commits · `GEN-002` E2E tests in CI · `GEN-003` TypeScript strict · `GEN-004` TDD discipline · `GEN-005` Vitest unit tests · `GEN-006` Manual Test Plan required · `GEN-007` Versioning & release · `GEN-008` Generated plugin artefacts |
 
-`GEN-006` has no executable rule — it is a manual gate enforced via the PR
-template. New boundaries require a new ADR; author it with `/adr-author`.
+`GEN-006` is enforced on two surfaces: archgate rules check every plan file
+(`gen006/plans-have-manual-test-plan`, `gen006/plans-link-upstream-prd`), and a CI
+step (`scripts/check-pr-body.mjs`) checks the PR body's `## Manual Test Plan`
+section. New boundaries require a new ADR; author it with `/adr-author`.
 
 ## Versioning & release
 
@@ -244,9 +252,10 @@ the mechanism is present for the future.
 - **[archgate](https://archgate.dev)** — the external CLI that powers this
   harness's architecture governance: the `.archgate/` rules, the
   `npm run archgate` gate, and the ADR enforcement in the pre-push hook and CI.
-  It is **not** a bundled npm dependency — every `archgate` script invokes it
-  through `npx -y archgate`, which downloads it on first use, so there is nothing
-  to install by hand. To pin a version or install it globally, follow the
+  It is pinned in `devDependencies` and installed by `npm install` / `npm ci`, so
+  the lockfile locks its version and the gate is reproducible on every machine and
+  in CI. To upgrade, bump the `archgate` devDependency (and the `ARCHGATE_VERSION`
+  fallback in `scripts/archgate-ci.mjs`); see the
   [archgate CLI docs](https://cli.archgate.dev/).
 
 ### Setup

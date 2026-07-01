@@ -90,6 +90,12 @@ Every phase is described across the same lanes:
 | **Pipeline**  | The CI/hook stage that gates the phase.                                |
 | **Git**       | The git action (branch, pre-push, push).                              |
 
+> **Hard vs. soft enforcement.** The Key-ADRs column lists the constraints that
+> bind each phase, but not every ADR clause is machine-checked. archgate and the CI
+> gates verify structure and presence; the rest rests on the soft `*-adrs` routing
+> plus human review. See [`docs/enforcement-coverage.md`](docs/enforcement-coverage.md)
+> for the per-ADR map of what is hard-enforced vs. prompt-only.
+
 ## Feature flow
 
 The Feature flow is the full flow; Bug and Change-Request are documented as
