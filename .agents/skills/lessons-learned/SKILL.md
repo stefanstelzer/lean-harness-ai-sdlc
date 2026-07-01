@@ -118,3 +118,7 @@ If nothing is worth capturing, say so — don't force documentation for trivial 
 - If a learning **contradicts** an existing ADR, do not modify it — flag it for human review.
 - This skill captures knowledge only. Implementation, testing, and the architectural decisions
   themselves belong to the other phases.
+
+## Hand-off
+
+Next: commit, push, and open the PR with `/pr` — the final station of the delivery spine.

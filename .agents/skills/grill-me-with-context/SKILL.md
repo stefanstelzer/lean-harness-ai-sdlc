@@ -33,3 +33,7 @@ A resolved decision that lives only in the chat is lost. Fold each one back:
 - **Into an ADR when it's architectural** — a decision that binds future work (a seam, a module boundary, a contract, a layering rule) belongs in `.archgate/adrs/`. Use the `/adr-author` skill to write or update it; architectural ADRs are binding constraints (the `*-adrs` rules), so this is how the decision becomes enforceable, not merely recorded.
 
 **Done when** every core ambiguity is resolved, the artifact reflects the decisions, and each architectural decision is captured as an ADR.
+
+## Hand-off
+
+Next: when you grilled a **PRD**, hand it to `/prd-to-plan`; when you grilled a **plan**, hand it to `/tdd` to implement.
