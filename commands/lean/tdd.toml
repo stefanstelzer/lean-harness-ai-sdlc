@@ -50,7 +50,7 @@ This repo is **human-in-the-loop**. Before writing code, agree the shape with th
 
 - Read the ADRs that govern the area you're touching (routed by the `*-adrs` rules) and match that domain vocabulary in test names.
 - Confirm the public interface and which behaviours matter — you can't test everything, so focus on critical paths and the validation contract, not every edge case.
-- List the **behaviours** to test (not implementation steps) and get the user's approval.
+- List the **behaviours** to test (not implementation steps). **Stop and get the user's explicit approval of this list before writing any test** — do not proceed on your own.
 
 ### 3. Tracer bullet
 
@@ -91,6 +91,10 @@ A unit with two passing tests and one failing test is not done.
 [ ] Confirmed red before implementing
 [ ] Code is minimal for this test; nothing speculative added
 ```
+
+## Hand-off
+
+Next: review the change with `/reviewer`, capture learnings with `/lessons-learned`, then commit, push, and open the PR with `/pr`.
 
 
 ---

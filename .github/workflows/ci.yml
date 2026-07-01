@@ -11,6 +11,9 @@ name: CI Pipeline
 on:
   push:
   pull_request:
+    # `edited` is included so a PR whose body is fixed without a new push
+    # re-runs the GEN-006 Manual Test Plan body check below.
+    types: [opened, synchronize, reopened, edited]
   workflow_dispatch:
 
 permissions:
@@ -39,6 +42,11 @@ jobs:
 
       - name: Plugin artefact sync
         run: npm run check:plugins
+
+      - name: PR body — Manual Test Plan (GEN-006)
+        # Only pull_request events carry a PR body; a no-op on push.
+        if: github.event_name == 'pull_request'
+        run: npm run check:pr-body
 
       - name: Archgate compliance
         run: npm run archgate:ci

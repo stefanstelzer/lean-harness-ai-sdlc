@@ -184,6 +184,12 @@ creating or updating a PR, verify with `gh pr view <n> --json title,body`. The
 the `commit-msg` hook (commitlint) and required by `GEN-001` — it drives
 versioning (`GEN-007`).
 
+Keep the commit **subject at ≤100 characters** and wrap every **body and footer
+line at ≤100** — `commitlint`'s `header-max-length` / `body-max-line-length` /
+`footer-max-line-length` reject longer lines and the `commit-msg` hook aborts the
+commit. For a multi-paragraph body, write the message to a file and commit it with
+`git commit -F <file>` rather than a single long `-m` string.
+
 ### Code style
 
 - TypeScript, strict mode (`GEN-003`). ESM (`.js` import specifiers for local

@@ -13,6 +13,8 @@ the TypeScript library under [`src/`](../src) is the dogfood it ships.
    repository and the demo library.
 3. **[Distribution](./distribution.md)** — how the harness ships to Claude Code,
    Gemini CLI and Antigravity from one `.agents/` source, and how to install it.
+4. **[Enforcement coverage](./enforcement-coverage.md)** — the per-ADR map of what
+   is hard-enforced (archgate rules, CI gates) vs. prompt-only / human review.
 
 ## Start here
 
@@ -22,7 +24,7 @@ the TypeScript library under [`src/`](../src) is the dogfood it ships.
 - **[WORKFLOW.md](../WORKFLOW.md)** — the three flows (Feature / Bug /
   Change-Request) and the shared delivery spine, with a per-phase table.
 - **[Architecture Decision Records](../.archgate/adrs/)** — the binding
-  architectural decisions (`ARCH-001`, `GEN-001`…`GEN-007`), enforced by
+  architectural decisions (`ARCH-001`, `GEN-001`…`GEN-008`), enforced by
   [archgate](https://archgate.dev) — the external architecture-governance CLI — on
   every push and in CI. See [`.archgate/adrs/README.md`](../.archgate/adrs/README.md)
   for the authoring guide, template, and index.

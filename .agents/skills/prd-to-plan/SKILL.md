@@ -34,7 +34,7 @@ Before finalising, check every phase:
 ## Process
 
 1. **Read the PRD and explore.** Pull the architectural decisions out of the PRD and the code: the deep modules to build or modify, their **seams**, and the ADRs that bind the area. Use the project's domain vocabulary and the methodology docs in `docs/`.
-2. **Decompose into deep-module phases, risk-first.** One deep module per phase; Phase 1 is the riskiest module (the tracer bullet); order the rest by dependency. **Confirm the module set and the phase boundaries with the user** before writing the detail.
+2. **Decompose into deep-module phases, risk-first.** One deep module per phase; Phase 1 is the riskiest module (the tracer bullet); order the rest by dependency. **Stop and confirm the module set and the phase boundaries with the user before writing the detail** — wait for explicit confirmation; do not start writing the phases on your own.
 3. **Write each phase's contract** — seam + interface, red behaviour list (highest-risk behaviour first), modules touched (no code), Manual Test Plan (`GEN-006`), binding ADRs, and acceptance criteria.
 4. **Run the guardrail pass** — deep-module check and ADR-citation check on every phase.
 5. **Write `plans/PLN-<n>-<slug>.md`** in the plan format below — including the mandatory `**Upstream PRD:**` link (`GEN-006`) — then present it for human review.
@@ -95,3 +95,7 @@ template keeps the gate effective. The **Upstream PRD** link is mandatory
 (`gen006/plans-link-upstream-prd`): it is what lets `/tdd` load the PRD and the plan together
 at implementation time. For a genuinely standalone plan with no PRD, add `upstream-prd: none`
 frontmatter with a one-line reason instead of the link.
+
+## Hand-off
+
+Next: pressure-test the plan with `/grill-me-with-context`; once the user approves it, implement it phase by phase with `/tdd`.
