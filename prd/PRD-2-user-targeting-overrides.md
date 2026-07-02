@@ -74,15 +74,15 @@ answer with no caller-side glue.
   overrides declared on a prerequisite propagate to dependents for that user
   (stories 6, 7) with no special-casing.
 - **Matching (sharpened in PRD review).** Exact string equality between the raw
-  `context.userId` and a list entry. Only an *absent* `userId` matches no list
+  `context.userId` and a list entry. Only an _absent_ `userId` matches no list
   (story 8); an explicitly empty-string id participates like any other value.
   The `anonymous` fallback exists only for rollout bucketing and never
   participates in override matching.
 - **No new registration-time validation.** Overlapping allow/deny entries are
   legitimate configuration (deny wins at evaluation time); empty arrays are
-  inert. The existing key and rollout validations are unchanged. *(Assumption —
+  inert. The existing key and rollout validations are unchanged. _(Assumption —
   confirmed by default in simulation; revisit if list hygiene becomes a real
-  operational problem.)*
+  operational problem.)_
 - **No change to the public barrel.** The flag type is already re-exported from
   the barrel; the new optional fields ride along. The barrel stays
   re-export-only (`ARCH-001`).
@@ -144,12 +144,12 @@ PRD review (grilling) outcome — core ambiguities surfaced and resolved
 (simulation-resolved, most defensible answer from codebase/ADRs/industry
 practice):
 
-1. *Flat fields vs. nested override object* — flat `allowUsers`/`denyUsers`,
+1. _Flat fields vs. nested override object_ — flat `allowUsers`/`denyUsers`,
    following the `rollout`/`requires` precedent in the flag type.
-2. *Does the allow list beat the kill switch?* — no; `enabled: false` wins over
+2. _Does the allow list beat the kill switch?_ — no; `enabled: false` wins over
    everything (targeting applies only while the flag is on).
-3. *Do overrides bypass prerequisites?* — no; dogfooding a layered feature means
+3. _Do overrides bypass prerequisites?_ — no; dogfooding a layered feature means
    allow-listing the user on the prerequisite too, which composes through the
    shared evaluation path.
-4. *New ADR?* — not needed; no new seam, module, or layering rule (see
+4. _New ADR?_ — not needed; no new seam, module, or layering rule (see
    Implementation Decisions).

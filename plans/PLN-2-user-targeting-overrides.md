@@ -51,7 +51,7 @@ prerequisites.
 
 - **Seam + interface.** `FeatureFlags.isEnabled(key, ctx)` — extended to consult
   the new lists inside the flag's own decision. `FeatureFlag.allowUsers?:
-  string[]` and `FeatureFlag.denyUsers?: string[]` added to the flag type.
+string[]` and `FeatureFlag.denyUsers?: string[]` added to the flag type.
 
 ### Modules touched
 
