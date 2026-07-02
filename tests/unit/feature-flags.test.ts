@@ -157,6 +157,97 @@ describe('FeatureFlags', () => {
       expect(flags.isEnabled('plain')).toBe(true);
     });
   });
+
+  describe('user targeting overrides', () => {
+    it('denies a deny-listed user even at full rollout', () => {
+      const flags = new FeatureFlags([
+        { key: 'plain', enabled: true, denyUsers: ['u-bad'] },
+        { key: 'full', enabled: true, rollout: 100, denyUsers: ['u-bad'] },
+      ]);
+      expect(flags.isEnabled('plain', { userId: 'u-bad' })).toBe(false);
+      expect(flags.isEnabled('full', { userId: 'u-bad' })).toBe(false);
+      // Other users are untouched by the deny list.
+      expect(flags.isEnabled('plain', { userId: 'u-ok' })).toBe(true);
+    });
+
+    it('admits an allow-listed user past the percentage gate', () => {
+      const flags = new FeatureFlags([
+        { key: 'canary', enabled: true, rollout: 0, allowUsers: ['beta-1'] },
+      ]);
+      expect(flags.isEnabled('canary', { userId: 'beta-1' })).toBe(true);
+      // The allow list admits only its members; everyone else keeps the
+      // rollout decision.
+      expect(flags.isEnabled('canary', { userId: 'someone-else' })).toBe(false);
+    });
+
+    it('lets the deny list win over the allow list', () => {
+      const flags = new FeatureFlags([
+        { key: 'x', enabled: true, allowUsers: ['u-both'], denyUsers: ['u-both'] },
+      ]);
+      expect(flags.isEnabled('x', { userId: 'u-both' })).toBe(false);
+    });
+
+    it('keeps the kill switch above the allow list', () => {
+      const flags = new FeatureFlags([{ key: 'x', enabled: false, allowUsers: ['beta-1'] }]);
+      expect(flags.isEnabled('x', { userId: 'beta-1' })).toBe(false);
+    });
+
+    it('ignores both lists when the evaluation has no userId', () => {
+      const flags = new FeatureFlags([
+        { key: 'on', enabled: true, denyUsers: ['anonymous'] },
+        { key: 'off', enabled: true, rollout: 0, allowUsers: ['anonymous'] },
+      ]);
+      // The 'anonymous' rollout bucket label is not a user id: an evaluation
+      // without a userId must never match a list entry of that name.
+      expect(flags.isEnabled('on')).toBe(true);
+      expect(flags.isEnabled('off')).toBe(false);
+    });
+
+    it('still gates an allow-listed user by the prerequisites', () => {
+      const flags = new FeatureFlags([
+        { key: 'base', enabled: false },
+        { key: 'dep', enabled: true, rollout: 0, allowUsers: ['beta-1'], requires: ['base'] },
+      ]);
+      // Allow-listing never bypasses `requires` — the chain stays dark…
+      expect(flags.isEnabled('dep', { userId: 'beta-1' })).toBe(false);
+      // …until the prerequisite is live, at which point the allow list
+      // admits the user past the dependent's own percentage gate.
+      flags.register({ key: 'base', enabled: true });
+      expect(flags.isEnabled('dep', { userId: 'beta-1' })).toBe(true);
+    });
+
+    it('lights a dependent through an allow-listed prerequisite', () => {
+      const flags = new FeatureFlags([
+        { key: 'base', enabled: true, rollout: 0, allowUsers: ['beta-1'] },
+        { key: 'dep', enabled: true, requires: ['base'] },
+      ]);
+      expect(flags.isEnabled('dep', { userId: 'beta-1' })).toBe(true);
+      expect(flags.isEnabled('dep', { userId: 'someone-else' })).toBe(false);
+    });
+
+    it('darkens a dependent through a deny-listed prerequisite', () => {
+      const flags = new FeatureFlags([
+        { key: 'base', enabled: true, rollout: 100, denyUsers: ['u-bad'] },
+        { key: 'dep', enabled: true, requires: ['base'] },
+      ]);
+      expect(flags.isEnabled('dep', { userId: 'u-bad' })).toBe(false);
+      expect(flags.isEnabled('dep', { userId: 'u-ok' })).toBe(true);
+    });
+
+    it('is deterministic for the same context', () => {
+      const flags = new FeatureFlags([
+        { key: 'x', enabled: true, rollout: 50, allowUsers: ['beta-1'], denyUsers: ['u-bad'] },
+      ]);
+      for (const userId of ['beta-1', 'u-bad', 'u-random']) {
+        expect(flags.isEnabled('x', { userId })).toBe(flags.isEnabled('x', { userId }));
+      }
+    });
+
+    it('is unchanged for a flag with no override lists', () => {
+      const flags = new FeatureFlags([{ key: 'plain', enabled: true, rollout: 100 }]);
+      expect(flags.isEnabled('plain', { userId: 'anyone' })).toBe(true);
+    });
+  });
 });
 
 describe('hashToBucket', () => {

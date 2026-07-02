@@ -37,4 +37,28 @@ describe('feature rollout journey', () => {
     expect(staged.isEnabled('upsell', user)).toBe(true);
     expect(staged.isEnabled('upsell', user)).toBe(true);
   });
+
+  it('forces a beta user into a dark canary and an affected user out of a release', () => {
+    const user = { userId: 'long-lived-user' };
+    const betaUser = { userId: 'beta-tester' };
+
+    // Stage 1: the canary is dark for the world, but the beta tester is
+    // forced in past the percentage gate.
+    const canary = new FeatureFlags([
+      { key: 'new-checkout', enabled: true, rollout: 0, allowUsers: ['beta-tester'] },
+    ]);
+    expect(canary.isEnabled('new-checkout', betaUser)).toBe(true);
+    expect(canary.isEnabled('new-checkout', user)).toBe(false);
+
+    // Stage 2: fully released, but one affected user is pulled back out —
+    // without touching the global rollout.
+    const released = new FeatureFlags([
+      { key: 'new-checkout', enabled: true, rollout: 100, denyUsers: ['affected-tenant'] },
+    ]);
+    expect(released.isEnabled('new-checkout', { userId: 'affected-tenant' })).toBe(false);
+    expect(released.isEnabled('new-checkout', user)).toBe(true);
+
+    // The targeted decisions are reproducible across invocations.
+    expect(released.isEnabled('new-checkout', { userId: 'affected-tenant' })).toBe(false);
+  });
 });
