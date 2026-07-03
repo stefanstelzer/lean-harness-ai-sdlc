@@ -38,9 +38,13 @@ Three binding rules:
    step. Placeholder tokens such as `<test or verification step>`, `<step>`, or
    `<TODO>` do not count as "filled". The `pr` skill checks this locally
    (`gh pr view --json body`) before declaring a PR ready for review, and the
-   `.github/PULL_REQUEST_TEMPLATE.md` seeds the section. There is no CI-side body
-   lint; the PR-body gate is author-and-reviewer discipline reinforced by the
-   skills and the template.
+   `.github/PULL_REQUEST_TEMPLATE.md` seeds the section. A CI step backs this up:
+   `scripts/check-pr-body.mjs` (`npm run check:pr-body`) runs on `pull_request`
+   events, reads the live PR body from the GitHub event payload, and fails the
+   `Verify` check if the `## Manual Test Plan` heading or a filled, non-placeholder
+   `- [ ]` bullet is missing. The `pr` skill and the template remain the primary
+   authors; the CI step is the backstop for a body that was stripped or never
+   written.
 
 2. **Plan-file Manual Test Plan** — every `plans/PLN-*.md` plan file that contains
    one or more phase blocks MUST embed a `Manual Test Plan` sub-section in every
@@ -110,10 +114,12 @@ glob, and its companion `.rules.ts` is enforced by `archgate check`.
 
 ### Risks
 
-- **PR-body discipline only**: the PR-body rule has no CI lint — it relies on the
-  `pr` skill running its check and on reviewers noticing a missing section. If this
-  proves insufficient in practice, a future amendment can add a CI step that fetches
-  the live PR body and greps for the heading.
+- **PR-body CI backstop**: the PR-body section is now also checked in CI
+  (`scripts/check-pr-body.mjs`) on `pull_request` events, reading the body from the
+  GitHub event payload rather than the working tree (archgate rules cannot see a
+  live PR body). A body edited with no accompanying event would not re-trigger the
+  check, so the `pull_request` trigger includes `edited` to cover a pure body edit;
+  the `pr` skill's local check remains the first line of defence.
 - **Wording drift**: a future skill iteration might emit the plan headings with a
   slightly different level or casing. For the plan-file rules this is mitigated
   structurally — the regex accepts H2/H3 phase headings and an H3/H4-or-bold Manual

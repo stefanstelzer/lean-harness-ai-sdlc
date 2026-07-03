@@ -38,7 +38,9 @@ the branch's unmerged history is never reviewed as if it were the current change
   base is not resolving (commonly a missing `.archgate/config.json` / `baseBranch` on a
   fresh checkout). **Do not report APPROVED.** Say the review context is misconfigured, then
   fall back to reviewing `git diff origin/main...` (or the appropriate base) directly,
-  reading each changed file against the ADRs you load from `.archgate/adrs/`.
+  reading each changed file against the ADRs you load from `.archgate/adrs/` (glob
+  `.archgate/adrs/*.md`, read each ADR's `domain` frontmatter, and apply those whose
+  `files` globs match the changed files).
 - If `allChangedFiles` is **much larger than the change under review**, the configured
   `baseBranch` resolves but the branch is *ahead of it* — it carries prior, already-agreed
   commits (or unmerged scaffolding) that are **not** part of this change. `review-context`
@@ -112,6 +114,10 @@ Keep it short (under ~20 lines):
 - ADRs with `files` globs apply only to matching files.
 - Never weaken or disable a rule to get to green — fix the cause. When the right fix would
   change a contract or is unclear, surface it to the user (HITL).
+
+## Hand-off
+
+Next: on **APPROVED**, capture learnings with `/lessons-learned`, then commit and open the PR with `/pr`. On **BLOCKED**, return to `/tdd` to fix the cause, then re-review.
 
 
 ---

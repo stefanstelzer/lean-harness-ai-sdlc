@@ -6,10 +6,29 @@
 // prints the message.
 
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { fileURLToPath, URL } from "node:url";
 
-const onPath = spawnSync("archgate", ["--version"], { encoding: "utf8" });
-const [cmd, baseArgs] =
-  onPath.status === 0 ? ["archgate", []] : ["npx", ["-y", "archgate"]];
+// Resolve archgate reproducibly. Prefer the version pinned in devDependencies
+// (node_modules/.bin/archgate) so pre-push and CI run the *same* archgate that
+// the lockfile records; fall back to a global install on PATH; only as a last
+// resort use a *version-pinned* npx — never an unpinned `npx archgate`, which
+// would float to @latest and make the gate non-reproducible. Keep
+// ARCHGATE_VERSION in sync with the "archgate" devDependency in package.json.
+const ARCHGATE_VERSION = "0.45.7";
+const localBin = fileURLToPath(
+  new URL("../node_modules/.bin/archgate", import.meta.url),
+);
+let cmd, baseArgs;
+if (existsSync(localBin)) {
+  [cmd, baseArgs] = [localBin, []];
+} else if (
+  spawnSync("archgate", ["--version"], { encoding: "utf8" }).status === 0
+) {
+  [cmd, baseArgs] = ["archgate", []];
+} else {
+  [cmd, baseArgs] = ["npx", ["-y", `archgate@${ARCHGATE_VERSION}`]];
+}
 
 const result = spawnSync(cmd, [...baseArgs, "check", "--json"], {
   encoding: "utf8",

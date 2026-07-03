@@ -13,7 +13,7 @@ Synthesize what is already known — do not run a full interview. Ask only the t
 
 1. **Explore, and speak the domain.** Understand the current state of the code in the area you're touching (`src/`). Use the project's domain vocabulary and the methodology docs in `docs/` throughout, and respect the ADRs that govern the area (routed by the `*-adrs` rules).
 
-2. **Find the seams.** Sketch the **seams** at which the feature will be tested — the public boundaries where behaviour is observable, the repo's native unit for this (the public exports of a module under `src/`, not its internals). Prefer existing seams to new ones, use the highest seam possible, and keep them few — one is ideal. **Confirm the seams with the user** before writing.
+2. **Find the seams.** Sketch the **seams** at which the feature will be tested — the public boundaries where behaviour is observable, the repo's native unit for this (the public exports of a module under `src/`, not its internals). Prefer existing seams to new ones, use the highest seam possible, and keep them few — one is ideal. **Stop and confirm the seams with the user before writing** — wait for their explicit go-ahead; do not start the PRD on your own.
 
 3. **Write the PRD.** Write `prd/PRD-<n>-<slug>.md` with the template below (`<n>` is the related tracking-issue number, or the next free PRD number). If the PRD legitimately embeds non-English domain loanwords, add `english-only: ignore` frontmatter with a one-line justification (per `AGENTS.md` › Language). The PRD is **done** when every template section is filled and the seams are confirmed — it is the artefact handed to the PRD review.
 
@@ -56,4 +56,8 @@ What this PRD deliberately does not cover.
 Anything else worth recording about the feature.
 
 </prd-template>
+
+## Hand-off
+
+Next: hand the PRD to `/grill-me-with-context` for the PRD review; once it survives the grilling and the user approves it, `/prd-to-plan` turns it into a plan.
 

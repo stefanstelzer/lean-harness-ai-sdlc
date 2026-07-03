@@ -31,6 +31,10 @@ A resolved decision that lives only in the chat is lost. Fold each one back:
 
 **Done when** every core ambiguity is resolved, the artifact reflects the decisions, and each architectural decision is captured as an ADR.
 
+## Hand-off
+
+Next: when you grilled a **PRD**, hand it to `/prd-to-plan`; when you grilled a **plan**, hand it to `/tdd` to implement.
+
 
 ---
 
