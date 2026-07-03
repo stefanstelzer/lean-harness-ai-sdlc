@@ -17,6 +17,18 @@ export interface FeatureFlag {
    */
   rollout?: number;
   /**
+   * Optional user ids that always pass this flag's percentage gate. The list
+   * bypasses only `rollout` — `enabled: false`, `denyUsers`, and `requires`
+   * all still apply. Ignored when the evaluation context has no `userId`.
+   */
+  allowUsers?: string[];
+  /**
+   * Optional user ids that never see this flag. Deny wins over `allowUsers`
+   * and applies at any rollout, including a full one. Ignored when the
+   * evaluation context has no `userId`.
+   */
+  denyUsers?: string[];
+  /**
    * Optional prerequisite flag keys. The flag evaluates `true` only when it is
    * itself enabled AND every listed prerequisite is enabled for the same
    * evaluation context. Unknown keys fail closed; cycles are rejected at

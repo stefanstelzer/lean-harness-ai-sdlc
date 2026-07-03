@@ -51,13 +51,19 @@ export class FeatureFlags {
    * - Unknown keys evaluate to `false`.
    * - A `rollout` percentage enables the flag for a deterministic subset of
    *   users (stable across calls for the same `userId`).
+   * - `denyUsers` / `allowUsers` pin specific users: a denied user never sees
+   *   the flag, an allowed user bypasses only the percentage gate. Neither
+   *   list overrides `enabled: false` or the `requires` gate below.
    */
   isEnabled(key: string, context: EvaluationContext = {}): boolean {
     const flag = this.flags.get(key);
     if (!flag || !flag.enabled) {
       return false;
     }
-    if (!passesRollout(flag, context)) {
+    if (matchesList(flag.denyUsers, context)) {
+      return false;
+    }
+    if (!matchesList(flag.allowUsers, context) && !passesRollout(flag, context)) {
       return false;
     }
     // A flag is enabled only when every prerequisite is also enabled for the
@@ -104,6 +110,15 @@ export class FeatureFlags {
     };
     return visit(start);
   }
+}
+
+/**
+ * Whether the context's user id appears on the given targeting list. Only a
+ * present `userId` can match — the `anonymous` rollout fallback never
+ * participates in override matching.
+ */
+function matchesList(list: readonly string[] | undefined, context: EvaluationContext): boolean {
+  return context.userId !== undefined && list !== undefined && list.includes(context.userId);
 }
 
 /**

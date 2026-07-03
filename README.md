@@ -305,6 +305,27 @@ const flags = new FeatureFlags([
 flags.isEnabled('checkout-upsell', { userId: 'user-42' }); // true only while new-checkout is too
 ```
 
+**Per-user targeting overrides** pin specific users independently of the
+percentage: ids on `allowUsers` always pass the rollout gate (dogfooders, beta
+customers), ids on `denyUsers` never see the flag (a tenant that hit a bug).
+Deny wins over allow; `enabled: false` and `requires` still apply, and
+evaluations without a `userId` ignore both lists.
+
+```ts
+const flags = new FeatureFlags([
+  {
+    key: 'new-checkout',
+    enabled: true,
+    rollout: 5,
+    allowUsers: ['beta-42'],
+    denyUsers: ['tenant-9'],
+  },
+]);
+
+flags.isEnabled('new-checkout', { userId: 'beta-42' }); // true — forced in at 5%
+flags.isEnabled('new-checkout', { userId: 'tenant-9' }); // false — forced out
+```
+
 ## Use this repo as a template
 
 1. Copy `.agents/`, `.claude/` (with its symlinks), `.archgate/`, `.husky/`,
