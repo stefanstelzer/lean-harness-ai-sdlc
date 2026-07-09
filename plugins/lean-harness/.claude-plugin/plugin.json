@@ -1,6 +1,6 @@
 {
   "name": "lean-harness",
-  "description": "LEAN AI-SDLC harness skills: discovery, goal, grill-me-with-context, prd-to-plan, tdd, bug-analysis, reviewer, pr, lessons-learned, adr-author, write-better-skill, decide-semver — plus /init-harness to scaffold the full harness into any repo.",
+  "description": "LEAN AI-SDLC harness skills: discovery, goal, grill-me-with-context, prd-to-plan, tdd, bug-analysis, reviewer, lessons-learned, adr-author, write-better-skill, decide-semver; command: pr — plus /init-harness to scaffold the full harness into any repo.",
   "version": "0.1.0",
   "author": {
     "name": "Stefan Stelzer",

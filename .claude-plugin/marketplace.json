@@ -12,7 +12,7 @@
     {
       "name": "lean-harness",
       "source": "./plugins/lean-harness",
-      "description": "12 agent skills (discovery, goal, grill-me-with-context, prd-to-plan, tdd, bug-analysis, reviewer, pr, lessons-learned, adr-author, write-better-skill, decide-semver) plus /init-harness to scaffold the full harness.",
+      "description": "11 agent skills (discovery, goal, grill-me-with-context, prd-to-plan, tdd, bug-analysis, reviewer, lessons-learned, adr-author, write-better-skill, decide-semver), 1 command (pr), plus /init-harness to scaffold the full harness.",
       "category": "workflow",
       "tags": ["ai-sdlc", "tdd", "archgate", "adr", "workflow", "skills"],
       "homepage": "https://github.com/stefanstelzer/lean-harness-ai-sdlc",

@@ -83,7 +83,7 @@ Every phase is described across the same lanes:
 | Lane          | Meaning                                                                 |
 | ------------- | ---------------------------------------------------------------------- |
 | **Phase**     | The step in the flow (left → right).                                   |
-| **Skills**    | The skill that assists the phase (`.agents/skills/<name>/`, run as `/<name>`). |
+| **Skills**    | The skill or command that assists the phase (`.agents/skills/<name>/` or `.agents/commands/<name>.md`, run as `/<name>`). |
 | **Key ADRs**  | Binding constraints — the ADRs in `.archgate/adrs/`, routed via `.agents/rules/*-adrs.md`. |
 | **Documents** | Project docs that inform or are updated in the phase.                  |
 | **Tests**     | The automated tests that run.                                         |
@@ -218,7 +218,7 @@ ADRs), and `/decide-semver` (a manual release helper, see Versioning).
 
 - **Goal:** Gate the push locally before it reaches CI.
 - **Pipeline / Git:** `/pr`'s push fires the Husky **pre-push** hook
-  (`.husky/pre-push`), which runs, in order: skill & rule symlink checks →
+  (`.husky/pre-push`), which runs, in order: skill, command & rule symlink checks →
   **plugin artefact sync** (`check:plugins`) → **Archgate** compliance
   (`scripts/archgate-ci.mjs`) → **Trivy** security scan → **typecheck**
   (`tsc --noEmit`, `GEN-003` — Vitest/esbuild does not type-check) → **unit + smoke

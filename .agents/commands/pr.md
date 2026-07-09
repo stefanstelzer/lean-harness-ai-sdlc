@@ -2,7 +2,6 @@
 name: pr
 description: Commit the work, open the PR, then watch the PR run and drive it green by fixing root causes. Use at the end of a change to commit, raise the PR, and resolve CI failures.
 allowed-tools: Read, Bash(git:*), Bash(gh:*), Bash(npm:*), Bash(node:*), Bash(trivy:*)
-user-invocable: true
 ---
 
 # Open the PR and drive it green

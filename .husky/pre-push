@@ -8,6 +8,10 @@ echo "=== Skill Symlink Check ==="
 sh scripts/check-skill-symlinks.sh || { echo "❌ Skill symlink check failed. Push aborted."; exit 1; }
 
 echo ""
+echo "=== Command Symlink Check ==="
+sh scripts/check-command-symlinks.sh || { echo "❌ Command symlink check failed. Push aborted."; exit 1; }
+
+echo ""
 echo "=== Rule Symlink Check ==="
 sh scripts/check-rule-symlinks.sh || { echo "❌ Rule symlink check failed. Push aborted."; exit 1; }
 
