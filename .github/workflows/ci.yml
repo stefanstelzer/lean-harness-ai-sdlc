@@ -37,7 +37,7 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Symlink checks (skills + rules)
+      - name: Symlink checks (skills + commands + rules)
         run: npm run check:links
 
       - name: Plugin artefact sync

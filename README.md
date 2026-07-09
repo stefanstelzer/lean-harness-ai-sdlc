@@ -71,10 +71,12 @@ The harness doesn't just list rules — it **guides how agents implement**:
 ```text
 .
 ├── .agents/                 # tool-agnostic single source of truth for the harness
-│   ├── skills/<name>/        #   12 agent skills (SKILL.md + sub-docs)
+│   ├── skills/<name>/        #   11 agent skills — knowledge (SKILL.md + sub-docs)
+│   ├── commands/<name>.md     #   1 agent command — actions the user invokes
 │   └── rules/<name>.md        #   workspace rules (ADR routers + style)
 ├── .claude/                 # per-tool view of the harness
 │   ├── skills/<name>  ───────►  symlink → ../../.agents/skills/<name>
+│   ├── commands/<name>.md ───►  symlink → ../../.agents/commands/<name>.md
 │   ├── rules/<name>.md ──────►  symlink → ../../.agents/rules/<name>.md
 │   └── agent-memory/          #   durable learnings written by /lessons-learned
 ├── .archgate/               # architecture governance
@@ -98,15 +100,17 @@ The harness doesn't just list rules — it **guides how agents implement**:
 └── README.md                # you are here
 ```
 
-Skills and rules have a **single source of truth** under `.agents/`; `.claude/`
-holds only symlinks into it, so every agent tool sees the same set with no copy
-drift. `scripts/check-skill-symlinks.sh` and `scripts/check-rule-symlinks.sh`
+Skills, commands, and rules have a **single source of truth** under `.agents/`;
+`.claude/` holds only symlinks into it, so every agent tool sees the same set
+with no copy drift. `scripts/check-skill-symlinks.sh`,
+`scripts/check-command-symlinks.sh`, and `scripts/check-rule-symlinks.sh`
 (`npm run check:links`) enforce this in the pre-push hook and CI.
 
 ## Skills
 
-The 12 skills live under [`.agents/skills/`](./.agents/skills/) and are invoked
-as `/goal`, `/tdd`, etc.
+**Skills are knowledge** — reference material an agent consults. The 11 skills
+live under [`.agents/skills/`](./.agents/skills/) and are invoked as `/goal`,
+`/tdd`, etc.
 
 | Skill                    | Flow station      | Purpose                                                                                        |
 | ------------------------ | ----------------- | ---------------------------------------------------------------------------------------------- |
@@ -117,20 +121,28 @@ as `/goal`, `/tdd`, etc.
 | `/tdd`                   | Agent / Artefact  | Implement test-first in **vertical slices** (**red → green → refactor**); lands the spec first |
 | `/bug-analysis`          | Bug investigation | Reproduce, isolate root cause, write a failing test first                                      |
 | `/reviewer`              | Commit (archgate) | Gate the diff on correctness, architecture, tests                                              |
-| `/pr`                    | Commit → PR       | Commit, push, open the PR with `--fill-verbose`, drive CI green                                |
 | `/lessons-learned`       | Commit (archgate) | Feed retrospective insight back into ADRs / agent-memory                                       |
 | `/adr-author`            | PRD review        | Write/amend ADRs in `.archgate/adrs/` (+ optional rules)                                       |
 | `/write-better-skill`    | Meta              | How to author skills for this harness (frontmatter, patterns)                                  |
 | `/decide-semver`         | Release           | Read the diff since last tag and may raise the semver floor                                    |
 
+## Commands
+
+**Commands are actions** — a named `WORKFLOW.md` station a human explicitly
+invokes. The 1 command lives under [`.agents/commands/`](./.agents/commands/).
+
+| Command | Flow station | Purpose                                                          |
+| ------- | ------------- | ----------------------------------------------------------------- |
+| `/pr`   | Commit → PR   | Commit, push, open the PR with `--fill-verbose`, drive CI green   |
+
 ## Install as a plugin
 
-The 12 skills ship to three agent tools from one canonical source (`.agents/`).
-See [`docs/distribution.md`](./docs/distribution.md) for the full model.
+The 11 skills + 1 command ship to three agent tools from one canonical source
+(`.agents/`). See [`docs/distribution.md`](./docs/distribution.md) for the full model.
 
 The skills: `discovery`, `goal`, `grill-me-with-context`, `prd-to-plan`, `tdd`,
-`bug-analysis`, `reviewer`, `pr`, `lessons-learned`, `adr-author`,
-`write-better-skill`, `decide-semver`.
+`bug-analysis`, `reviewer`, `lessons-learned`, `adr-author`, `write-better-skill`,
+`decide-semver`. The commands: `pr`.
 
 ### Claude Code
 
@@ -139,9 +151,9 @@ The skills: `discovery`, `goal`, `grill-me-with-context`, `prd-to-plan`, `tdd`,
 /plugin install lean-harness@lean-harness
 ```
 
-Skills appear as `/lean-harness:<skill>`. Run `/lean-harness:init-harness` to
-scaffold the full harness (canonical `.agents/`, archgate ADRs, CI, git hooks)
-into a repo.
+Skills appear as `/lean-harness:<skill>`, commands as `/lean-harness:<command>`
+(e.g. `/lean-harness:pr`). Run `/lean-harness:init-harness` to scaffold the full
+harness (canonical `.agents/`, archgate ADRs, CI, git hooks) into a repo.
 
 ### Gemini CLI
 
@@ -155,8 +167,8 @@ Commands appear as `/lean:<skill>` (e.g. `/lean:tdd`); harness context comes fro
 ### Antigravity
 
 Clone or use this repo as a workspace template — Antigravity reads
-`.agents/skills/` and `AGENTS.md` natively, no packaging required. Add any MCP
-servers via `~/.gemini/config/mcp_config.json` if needed.
+`.agents/skills/`, `.agents/commands/`, and `AGENTS.md` natively, no packaging
+required. Add any MCP servers via `~/.gemini/config/mcp_config.json` if needed.
 
 ## Architecture governance
 

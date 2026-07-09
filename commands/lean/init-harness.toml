@@ -12,14 +12,18 @@ Steps:
    npx -y degit stefanstelzer/lean-harness-ai-sdlc /tmp/lean-harness
 3. Copy these into the repo root (do NOT overwrite the user's src/ or tests/):
    .agents/  .archgate/  .husky/  AGENTS.md  WORKFLOW.md  CLAUDE.md
-   scripts/check-skill-symlinks.sh  scripts/check-rule-symlinks.sh
+   scripts/check-skill-symlinks.sh  scripts/check-command-symlinks.sh
+   scripts/check-rule-symlinks.sh
    scripts/archgate-ci.mjs  scripts/semver-floor.mjs  scripts/run-trivy.sh
    .github/  config files (tsconfig/vitest/eslint/prettier/commitlint/editorconfig
    /nvmrc/npmrc/trivyignore) only if the repo lacks them.
 4. Recreate the symlinks: for each dir in .agents/skills/* create
-   .claude/skills/<name> -> ../../.agents/skills/<name>; same for .agents/rules/*.
+   .claude/skills/<name> -> ../../.agents/skills/<name>; for each file in
+   .agents/commands/*.md create .claude/commands/<name>.md ->
+   ../../.agents/commands/<name>.md; same pattern for .agents/rules/*.
 5. Merge these scripts into the user's package.json (do not clobber existing ones):
-   archgate, archgate:ci, check:skills, check:rules, check:links, verify, prepare.
+   archgate, archgate:ci, check:skills, check:commands, check:rules, check:links,
+   verify, prepare.
 6. Run: npm run check:links && npm run archgate:ci && npm test, and report results.
 7. Tell the user to review .archgate/adrs/ and adapt the ADR rules (src/, tests/,
    tsconfig, vitest) to THEIR stack — the GEN-* rules assume the demo layout.

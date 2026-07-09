@@ -8,7 +8,10 @@ set -e
 node scripts/build-plugins.mjs >/dev/null
 
 # Managed (generated) paths — must match a freshly built tree.
-PATHS="plugins/lean-harness/skills commands/lean GEMINI.md"
+# plugins/lean-harness/commands is only *partially* managed (marker-comment files
+# only — it shares the directory with the hand-authored init-harness.md, GEN-008),
+# but a fresh build only ever touches those files, so a plain diff here is safe.
+PATHS="plugins/lean-harness/skills plugins/lean-harness/commands commands/lean GEMINI.md"
 
 if ! git diff --quiet -- $PATHS || [ -n "$(git ls-files --others --exclude-standard -- $PATHS)" ]; then
   echo "❌ Generated plugin artefacts are out of date."

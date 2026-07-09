@@ -39,10 +39,11 @@ product-content exception above does **not** extend to these files.
 
 ## Skills Layout
 
-Agent skills live in `.agents/skills/<name>/SKILL.md` as the single source of
-truth. `.claude/skills/<name>` must be a symlink pointing to
-`../../.agents/skills/<name>` so every agent tool on the team sees the same skill
-set.
+**Skills are knowledge** — reference material an agent consults, not a
+`WORKFLOW.md` station a human explicitly runs. Agent skills live in
+`.agents/skills/<name>/SKILL.md` as the single source of truth. `.claude/skills/<name>`
+must be a symlink pointing to `../../.agents/skills/<name>` so every agent tool on
+the team sees the same skill set.
 
 When adding a new skill:
 
@@ -56,6 +57,30 @@ When removing a skill, delete both the real directory and the symlink.
 invariant and runs in the pre-push hook and CI. Symlinks require
 `git config core.symlinks=true` (default on macOS/Linux); Windows development is
 not supported, so no copy-based fallback is maintained.
+
+## Commands Layout
+
+**Commands are actions** — a named station in a `WORKFLOW.md` flow that a human
+explicitly invokes by typing `/<name>` (e.g. `/pr`). Agent commands live in
+`.agents/commands/<name>.md` as a single flat file (no bundled reference docs —
+that kind of knowledge belongs in a skill the command can point at) and are the
+single source of truth. `.claude/commands/<name>.md` must be a **file** symlink
+pointing to `../../.agents/commands/<name>.md`.
+
+When adding a new command:
+
+1. Create it at `.agents/commands/<name>.md` (never directly under `.claude/commands/`).
+2. Create the symlink: `ln -s ../../.agents/commands/<name>.md .claude/commands/<name>.md`.
+3. Commit both the command file and the symlink.
+
+When removing a command, delete both the real file and the symlink.
+
+`scripts/check-command-symlinks.sh` (`npm run check:commands`) enforces this
+invariant and runs in the pre-push hook and CI, mirroring `check:skills`. Not
+every skill needs converting — only migrate a skill to a command when it is
+genuinely a workflow station; general/cross-cutting knowledge (e.g. how a PR body
+must be formatted) stays documented once in `AGENTS.md` or a binding ADR, and a
+command should point at it rather than restate it.
 
 ## Rules Layout
 
@@ -77,17 +102,18 @@ and runs in the pre-push hook and CI. The rule files are short ADR routers
 (`general-adrs.md`, `architecture-adrs.md`) plus `styling-consistency.md`; they
 point agents to the binding ADRs by domain rather than duplicating their content.
 
-## Skill & Rule Authoring
+## Skill, Command & Rule Authoring
 
-Skills and workspace rules are shared by every agent on the team. They MUST be
-written **agent-agnostic** and MUST NOT reference a specific agent vendor,
-product, or model (e.g. "Claude", "Claude Code", "GPT", "Copilot", "Cursor").
-Write from the team's perspective — use neutral terms like "the agent", "the
-team", "you", or simply describe the task in the imperative. This applies to the
-`description` frontmatter, body copy, examples, and any bundled reference files.
-When updating an existing skill or rule, remove any vendor-specific phrasing you
-encounter. The meta-skill `/write-better-skill` documents how to author skills
-for this harness.
+Skills, commands, and workspace rules are shared by every agent on the team. They
+MUST be written **agent-agnostic** and MUST NOT reference a specific agent
+vendor, product, or model (e.g. "Claude", "Claude Code", "GPT", "Copilot",
+"Cursor"). Write from the team's perspective — use neutral terms like "the
+agent", "the team", "you", or simply describe the task in the imperative. This
+applies to the `description` frontmatter, body copy, examples, and any bundled
+reference files. When updating an existing skill, command, or rule, remove any
+vendor-specific phrasing you encounter. The meta-skill `/write-better-skill`
+documents how to author skills for this harness; the same principles apply to
+commands.
 
 Each `SKILL.md` opens with YAML frontmatter. Declare only the tools the skill
 actually uses:
@@ -96,38 +122,56 @@ actually uses:
 ---
 name: <name>
 description: <one line — when to use>
-allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(archgate:*), Edit, Write, Agent
+allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(archgate:*), Edit, Write
 user-invocable: <true|false>
 ---
 ```
 
-**No autonomous subagents.** Skills assist a human-driven stage; they do not
-delegate a whole stage to an autonomous subagent. A human stays in the loop at
-each stage (see [`WORKFLOW.md`](./WORKFLOW.md)).
+A command's frontmatter drops `user-invocable` — by definition every command is
+user-invoked, so the key would be a no-op:
+
+```yaml
+---
+name: <name>
+description: <one line — when to use>
+allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(archgate:*), Edit, Write
+---
+```
+
+**No autonomous subagents.** Skills and commands assist a human-driven stage;
+they do not delegate a whole stage to an autonomous subagent. A human stays in
+the loop at each stage (see [`WORKFLOW.md`](./WORKFLOW.md)).
 
 ## Plugin distribution
 
 The harness is distributed to three agent tools, but `.agents/` stays the single
 source of truth (`GEN-008`). `scripts/build-plugins.mjs` (`npm run build:plugins`)
-projects the canonical skills and `AGENTS.md` into each tool's native format —
-the same "author once" philosophy as the `.claude/` symlinks, one level up.
+projects the canonical skills, commands, and `AGENTS.md` into each tool's native
+format — the same "author once" philosophy as the `.claude/` symlinks, one level up.
 
 **Never hand-edit the generated artefacts.** They are wiped and rebuilt on every
 run: `plugins/lean-harness/skills/` (Claude Code plugin skills), `commands/lean/`
 (Gemini CLI commands, invoked `/lean:<name>`), and `GEMINI.md` (Gemini context
-from `AGENTS.md`). Edit `.agents/skills/<name>/` or `AGENTS.md`, then run
-`npm run build:plugins` and commit the result. `npm run check:plugins` (in
-`verify`, pre-push and CI) fails if the generated tree drifts.
+from `AGENTS.md`). `plugins/lean-harness/commands/<name>.md` (Claude Code plugin
+commands) is the one exception to "wiped wholesale": it shares its directory
+with the hand-authored `init-harness.md`, so the generator only creates,
+rewrites, or removes-as-stale files that carry its
+`# GENERATED from .agents/commands/...` marker comment, never touching a file
+without one. Edit `.agents/skills/<name>/`, `.agents/commands/<name>.md`, or
+`AGENTS.md`, then run `npm run build:plugins` and commit the result. `npm run
+check:plugins` (in `verify`, pre-push and CI) fails if the generated tree drifts.
 
 The three distribution targets:
 
 - **Claude Code** — a plugin + marketplace (`.claude-plugin/marketplace.json`,
-  `plugins/lean-harness/`); skills appear as `/lean-harness:<skill>`, plus
-  `/lean-harness:init-harness` to scaffold the full harness.
-- **Gemini CLI** — an extension (`gemini-extension.json`) of `/lean:<skill>`
-  commands with `GEMINI.md` as context.
-- **Antigravity** — no packaging; it consumes `.agents/skills/` and `AGENTS.md`
-  natively, so the repo is used directly as a workspace template.
+  `plugins/lean-harness/`); skills appear as `/lean-harness:<skill>`, commands as
+  `/lean-harness:<command>`, plus `/lean-harness:init-harness` to scaffold the
+  full harness.
+- **Gemini CLI** — an extension (`gemini-extension.json`) of `/lean:<name>`
+  commands (from both skills and commands) with `GEMINI.md` as context.
+- **Antigravity** — no packaging; it consumes `.agents/skills/`,
+  `.agents/commands/`, and `AGENTS.md` natively, so the repo is used directly as
+  a workspace template.
 
 The manifests listed above plus `plugins/lean-harness/commands/init-harness.md`
 are hand-authored and not generated — edit them directly.
@@ -233,10 +277,11 @@ A change is done only when **all** of these hold:
 | ------------------ | ------------------------------------------------------- |
 | Run all gates      | `npm run verify`                                        |
 | Architecture check | `npm run archgate` / `npm run archgate:ci`              |
-| Symlink invariants | `npm run check:links` (`check:skills` + `check:rules`)  |
+| Symlink invariants | `npm run check:links` (`check:skills` + `check:commands` + `check:rules`) |
 | Security scan      | `scripts/run-trivy.sh`                                  |
 | Tests              | `npm test` / `:unit` / `:smoke` / `:e2e`                |
-| Skills             | [`.agents/skills/`](./.agents/skills/)                  |
+| Skills (knowledge) | [`.agents/skills/`](./.agents/skills/)                  |
+| Commands (actions) | [`.agents/commands/`](./.agents/commands/)              |
 | Rules              | [`.agents/rules/`](./.agents/rules/)                    |
 | Decisions          | [`.archgate/adrs/`](./.archgate/adrs/)                  |
 
