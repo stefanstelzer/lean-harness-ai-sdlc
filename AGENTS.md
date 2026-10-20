@@ -74,8 +74,27 @@ When removing a rule, delete both the real file and the symlink.
 
 `scripts/check-rule-symlinks.sh` (`npm run check:rules`) enforces this invariant
 and runs in the pre-push hook and CI. The rule files are short ADR routers
-(`general-adrs.md`, `architecture-adrs.md`) plus `styling-consistency.md`; they
-point agents to the binding ADRs by domain rather than duplicating their content.
+(`general-adrs.md`, `architecture-adrs.md`), `styling-consistency.md`, and process
+management (`test-execution.md`); they point agents to the binding ADRs by domain
+rather than duplicating their content.
+
+## Test Execution & Process Management
+
+To prevent runaway background tasks and CPU contention:
+- **Scope test commands**: Run only the specific file(s) under development during TDD
+  (`npm test -- <test-file> --reporter=verbose`). Do not run full suites incrementally.
+- **Single-run mode**: Run tests strictly in single-run mode (`vitest run`, `--run`,
+  `--watch=false`). Watch mode is strictly prohibited.
+- **Process cleanup**: Check active tasks via `manage_task(Action='list')` and terminate
+  any stale test processes before launching new test commands.
+
+## Tracking Issues & ID Space
+
+PRDs, implementation plans, and GitHub tracking issues share **one unified number space**:
+- A feature begins with a GitHub tracking issue `#<n>`.
+- The PRD is named `prd/PRD-<n>-<slug>.md` and contains `**Tracking issue:** #<n>`.
+- The plan is named `plans/PLN-<n>-<slug>.md` and links its upstream PRD.
+- The PR links `Closes #<n>` in its body (`gen006/prd-has-tracking-issue`, `GEN-006`).
 
 ## Skill & Rule Authoring
 
@@ -218,6 +237,8 @@ A change is done only when **all** of these hold:
       are met.
 - [ ] New behaviour is covered by unit tests; user journeys by smoke/e2e
       (`GEN-004`, `GEN-005`, `GEN-002`).
+- [ ] **Walkthrough is green** for user-visible changes (Manual Test Plan walked in
+      the running app or CLI via `/walkthrough` before review).
 - [ ] **Archgate is green** (`npm run archgate`) — all ADRs satisfied.
 - [ ] **Tests are green** and `npm run verify` passes (lint + symlink checks +
       archgate + tests).
