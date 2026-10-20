@@ -18,7 +18,7 @@ Every phase carries the contract `/tdd` needs:
 - **Seam + interface** — the test boundary and the public signature being introduced or changed. This is what `/tdd` writes its test against.
 - **Red behaviour list** — the behaviours to drive red → green, highest-risk first; include the validation and error-handling contract, not just the happy path.
 - **Modules touched** — the files/modules the phase changes, named. **No code snippets** (they go stale; the exception is a prototype-derived snippet that encodes a decision more precisely than prose — a schema, type, or state machine).
-- **Manual Test Plan** — a `### Manual Test Plan` sub-section (H3) inside the phase, with a checklist of concrete, human-runnable steps, e.g. `- [ ] npm test -- <pattern> is green; …`. **Required on every phase by `GEN-006`**, which matches the H2 phase heading (`## Phase N: …`) and the H3 `### Manual Test Plan` heading below — never omit it, and keep the headings at these levels so the gate actually inspects the phase.
+- **Manual Test Plan** — a `### Manual Test Plan` sub-section (H3) inside the phase, with a checklist of concrete, human-runnable steps, e.g. `- [ ] npm test -- <pattern> is green; …`. **Required on every phase by `GEN-006`**, which matches the H2 phase heading (`## Phase N: …`) and the H3 `### Manual Test Plan` heading below — never omit it, and keep the headings at these levels so the gate actually inspects the phase. `/walkthrough` walks these steps in the running app or CLI, so write user-facing steps walkably: the context, the action, and the observable result.
 - **Binding ADRs** — name the ADRs the phase must satisfy (routed by the `*-adrs` rules), so the constraints are explicit.
 - _Acceptance criteria_ (recommended) — the done-bar for the phase.
 
@@ -31,7 +31,7 @@ Before finalising, check every phase:
 
 ## Process
 
-1. **Read the PRD and explore.** Pull the architectural decisions out of the PRD and the code: the deep modules to build or modify, their **seams**, and the ADRs that bind the area. Use the project's domain vocabulary and the methodology docs in `docs/`.
+1. **Read the PRD and explore.** Pull the architectural decisions out of the PRD and the code: the deep modules to build or modify, their **seams**, and the ADRs that bind the area. Use the project's domain vocabulary and the methodology docs in `docs/`. Check whether the PRD specifies a release flag: if so, ensure one phase carries the flag wiring and catalog entry.
 2. **Decompose into deep-module phases, risk-first.** One deep module per phase; Phase 1 is the riskiest module (the tracer bullet); order the rest by dependency. **Stop and confirm the module set and the phase boundaries with the user before writing the detail** — wait for explicit confirmation; do not start writing the phases on your own.
 3. **Write each phase's contract** — seam + interface, red behaviour list (highest-risk behaviour first), modules touched (no code), Manual Test Plan (`GEN-006`), binding ADRs, and acceptance criteria.
 4. **Run the guardrail pass** — deep-module check and ADR-citation check on every phase.
@@ -41,7 +41,7 @@ A plan is **done** when every phase is a deep module with its full `/tdd` contra
 
 ## Plan format
 
-`<n>` is the related tracking-issue number (or the source PRD's number). Add `english-only: ignore` frontmatter if the plan legitimately embeds non-English domain loanwords (per `AGENTS.md` › Language).
+`<n>` is the upstream PRD's number — which equals its GitHub tracking issue number, so PRD, plan, and issue share one ID space. An amendment plan gets its own tracking issue (`gh issue create`) and carries that number; never make one up. Add `english-only: ignore` frontmatter if the plan legitimately embeds non-English domain loanwords (per `AGENTS.md` › Language).
 
 ```
 # Plan: PLN-<n> <title>
@@ -73,6 +73,7 @@ decoupling, and the binding ADRs — as a bulleted list.
 
 ### Manual Test Plan
 - [ ] npm test -- <pattern> is green; <observable outcome>
+- [ ] As <user/context>, run/trigger <action> — <observable outcome>
 
 ### Acceptance criteria
 - <done-bar>
