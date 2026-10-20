@@ -30,11 +30,11 @@ human-executable verification checklist, and every plan must link its upstream P
 
 ## Decision
 
-Three binding rules:
+Three binding rules and one identity invariant:
 
 1. **PR body** — every pull request's body MUST contain a top-level H2 heading
    named exactly `## Manual Test Plan`, followed by at least one filled
-   `- [ ] <step>` checkbox describing a concrete, human-executable verification
+   `- [ ] <step>` or `- [x] <step>` checkbox describing a concrete, human-executable verification
    step. Placeholder tokens such as `<test or verification step>`, `<step>`, or
    `<TODO>` do not count as "filled". The `pr` skill checks this locally
    (`gh pr view --json body`) before declaring a PR ready for review, and the
@@ -46,22 +46,32 @@ Three binding rules:
    authors; the CI step is the backstop for a body that was stripped or never
    written.
 
-2. **Plan-file Manual Test Plan** — every `plans/PLN-*.md` plan file that contains
+2. **Plan-file Manual Test Plan** — every `plans/**/PLN-*.md` plan file that contains
    one or more phase blocks MUST embed a `Manual Test Plan` sub-section in every
-   phase block, with at least one filled `- [ ] <step>` bullet (same placeholder
+   phase block, with at least one filled `- [ ] <step>` or `- [x] <step>` bullet (same placeholder
    prohibition). The companion archgate rule `gen006/plans-have-manual-test-plan`
    enforces this locally (`archgate check`) and in CI. To avoid silently skipping a
    plan whose markup differs slightly, the rule accepts a phase heading at **H2 or
    H3** (`## Phase …` / `### Phase …`) and a Manual Test Plan marker as an **H3/H4
    heading or a bold line** (`### Manual Test Plan` / `**Manual Test Plan**`).
 
-3. **Plan-file upstream PRD link** — every `plans/PLN-*.md` MUST link the PRD it
-   descends from — a markdown link to `prd/PRD-*.md` (the `prd-to-plan` template
+3. **Plan-file upstream PRD link** — every `plans/**/PLN-*.md` MUST link the PRD it
+   descends from — a markdown link to `prd/**/PRD-*.md` (the `prd-to-plan` template
    emits `**Upstream PRD:** [..](../prd/..)`). This is what lets `/tdd` load the
    plan and its PRD together, so the requirements are in context during
    implementation, not just the plan. A genuinely standalone plan with no PRD opts
    out with `upstream-prd: none` frontmatter and a reason. The companion rule
    `gen006/plans-link-upstream-prd` enforces this.
+
+4. **Tracking issue & ID alignment** — PRDs, plans, and GitHub tracking issues share
+   **one number space**: a PRD's `<n>` is the number of its GitHub tracking issue, and
+   its plan carries the same number (`PRD-<n>-<slug>.md` and `PLN-<n>-<slug>.md`). Every
+   PRD states the issue in one canonical header line, `**Tracking issue:** #<n>`, whose
+   `<n>` equals the file's number; short context may follow it on the same line (e.g.
+   `#1375 (part of #1200)`), but the PRD's own issue comes first. `/pr` reads that line
+   to link the PR so the merge closes the issue. A number is used once across the repo:
+   no two PRDs share a `PRD-<n>` and no two plans share a `PLN-<n>`. The companion rules
+   `gen006/prd-has-tracking-issue` and `gen006/prd-plan-ids-unique` enforce this.
 
 The canonical layout keeps phase titles at H2 (`## Phase N: …`) and the phase-local
 Manual Test Plan at H3 (`### Manual Test Plan`); the rules tolerate the H3/bold

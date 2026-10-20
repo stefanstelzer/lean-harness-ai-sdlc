@@ -9,6 +9,30 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { fileURLToPath, URL } from "node:url";
 
+export function isTimeoutError(error) {
+  return typeof error === "string" && /timed out/i.test(error);
+}
+
+export function countTimeouts(report) {
+  let timeoutCount = 0;
+  for (const r of report?.results ?? []) {
+    if (r.status === "error" && r.error && isTimeoutError(r.error)) {
+      timeoutCount++;
+    }
+  }
+  return timeoutCount;
+}
+
+export function formatArchgateSummary(report) {
+  const timeoutCount = countTimeouts(report);
+  return (
+    `archgate: ${report.total} total · ${report.passed} passed · ` +
+    `${report.failed} failed · ${report.warnings} warnings` +
+    (report.ruleErrors ? ` · ${report.ruleErrors} rule errors` : "") +
+    (timeoutCount ? ` (${timeoutCount} timed out)` : "")
+  );
+}
+
 // Resolve archgate reproducibly. Prefer the version pinned in devDependencies
 // (node_modules/.bin/archgate) so pre-push and CI run the *same* archgate that
 // the lockfile records; fall back to a global install on PATH; only as a last
@@ -51,14 +75,12 @@ try {
   process.exit(result.status ?? 1);
 }
 
-const summary =
-  `archgate: ${report.total} total · ${report.passed} passed · ` +
-  `${report.failed} failed · ${report.warnings} warnings` +
-  (report.ruleErrors ? ` · ${report.ruleErrors} rule errors` : "");
-console.log(summary);
+console.log(formatArchgateSummary(report));
 
 const escape = (s) =>
   String(s).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+
+const isWarning = (v) => (v.severity ?? v.level) === "warning";
 
 for (const r of report.results ?? []) {
   if (r.status === "pass") continue;
@@ -67,9 +89,13 @@ for (const r of report.results ?? []) {
   console.log(`✗ ${r.ruleId} (${r.adrId}) — ${r.description}`);
 
   if (r.status === "error" && r.error) {
-    console.log(`  rule crashed: ${r.error}`);
+    const isTimeout = isTimeoutError(r.error);
+    const label = isTimeout ? "rule timed out" : "rule crashed";
+    console.log(
+      `  ${label}: ${r.error}${isTimeout ? " (capacity/load issue)" : ""}`,
+    );
     process.stdout.write(
-      `::error title=${escape(r.ruleId)}::Rule crashed: ${escape(r.error)}\n`,
+      `::error title=${escape(r.ruleId)}::${isTimeout ? "Rule timed out" : "Rule crashed"}: ${escape(r.error)}\n`,
     );
   }
 
@@ -89,6 +115,27 @@ for (const r of report.results ?? []) {
   if (hidden > 0) {
     console.log(`  … and ${hidden} more violation(s) not shown by archgate.`);
   }
+}
+
+// Warn-level violations live on pass-status rules, so the failure loop above
+// skips them and the headline `warnings` count has no detail. Print a compact,
+// per-rule breakdown so the count is actionable without flooding the log with
+// one line per file (run `archgate check` for the full per-file list).
+const warnCounts = new Map();
+for (const r of report.results ?? []) {
+  for (const v of r.violations ?? []) {
+    if (!isWarning(v)) continue;
+    const key = `${r.ruleId} (${r.adrId})`;
+    warnCounts.set(key, (warnCounts.get(key) ?? 0) + 1);
+  }
+}
+if (warnCounts.size) {
+  console.log("");
+  console.log(`⚠ ${report.warnings} warning(s) — non-blocking, by rule:`);
+  for (const [key, n] of [...warnCounts.entries()].sort((a, b) => b[1] - a[1])) {
+    console.log(`  · ${key}: ${n}`);
+  }
+  console.log("  Run `archgate check` for the per-file detail.");
 }
 
 process.exit(report.pass ? 0 : 1);

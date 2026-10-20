@@ -33,6 +33,11 @@ separate cost/benefit tradeoff that this project chooses not to pay (see Decisio
   unit + smoke gates only; the e2e journeys are run on demand (locally via
   `npm run test:e2e`, and as part of cutting a release). Keeping `tests/e2e/`
   green is therefore the author's responsibility, not a merge gate.
+- **English-only governance prose**: All governance documents (ADRs, READMEs,
+  PRDs, plans, documentation) MUST be authored in English (`AGENTS.md` → Language).
+  Files containing domain loanwords declare `english-only: ignore` frontmatter.
+  The companion archgate rule `gen002/english-only-prose` enforces this locally and
+  in CI.
 
 ## Do's and Don'ts
 
