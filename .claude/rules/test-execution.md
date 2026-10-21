@@ -1,0 +1,1 @@
+../../.agents/rules/test-execution.md

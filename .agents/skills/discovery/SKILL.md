@@ -1,7 +1,7 @@
 ---
 name: discovery
 description: Discovery — turn the feature discussion and codebase understanding into a PRD under prd/, framing the problem, scope, and test seams before planning. Use at the start of a feature, or when the user wants a PRD / requirements written up.
-allowed-tools: Read, Glob, Grep, Write, Bash(git:*)
+allowed-tools: Read, Glob, Grep, Write, Bash(git:*), Bash(gh:*)
 user-invocable: true
 ---
 
@@ -17,9 +17,17 @@ Synthesize what is already known — do not run a full interview. Ask only the t
 
 2. **Find the seams.** Sketch the **seams** at which the feature will be tested — the public boundaries where behaviour is observable, the repo's native unit for this (the public exports of a module under `src/`, not its internals). Prefer existing seams to new ones, use the highest seam possible, and keep them few — one is ideal. **Stop and confirm the seams with the user before writing** — wait for their explicit go-ahead; do not start the PRD on your own.
 
-3. **Write the PRD.** Write `prd/PRD-<n>-<slug>.md` with the template below (`<n>` is the related tracking-issue number, or the next free PRD number). If the PRD legitimately embeds non-English domain loanwords, add `english-only: ignore` frontmatter with a one-line justification (per `AGENTS.md` › Language). The PRD is **done** when every template section is filled and the seams are confirmed — it is the artefact handed to the PRD review.
+3. **Consider release-flag gating.** Because the team develops trunk-based (every merge to `main` ships on the next release), a feature that may be **half-built when it merges** should launch behind a **release feature flag** so it stays hidden or inactive until completed. Ask the creator whether this feature launches gated — unless it is a trivial, ships-complete change. Record the answer in *Implementation Decisions*.
+
+4. **Obtain the tracking issue.** Every PRD has a GitHub tracking issue, and the PRD's number **is** that issue's number — PRDs, plans, and issues share one number space. Use the issue the discussion started from (`/discovery <issue-url>`, or the one the user names); when there is none, open it now with `gh issue create --title "<feature>" --body "<one-paragraph problem statement>"` and take the number it returns. Do not invent a number: any number not taken from a real issue is the one the next issue will receive, causing a collision. **Done when** the issue number is in hand.
+
+5. **Write the PRD.** Write `prd/PRD-<n>-<slug>.md` with the template below, where `<n>` is the tracking issue's number from step 4. State the tracking issue in the header line the template opens with, exactly as `**Tracking issue:** #<n>`: it is the canonical record, `/pr` reads it to link the PR so the merge closes the issue, and `gen006/prd-has-tracking-issue` (`GEN-006`) enforces it. If the PRD legitimately embeds non-English domain loanwords, add `english-only: ignore` frontmatter with a one-line justification (per `AGENTS.md` › Language). The PRD is **done** when every template section is filled, the issue is linked, and the seams are confirmed — it is the artefact handed to the PRD review.
 
 <prd-template>
+
+# PRD-<n>: <title>
+
+**Tracking issue:** #<n>
 
 ## Problem Statement
 

@@ -71,16 +71,24 @@ trivial change with no governance implication.
 
 ### Writing ADRs — via `adr-author`
 
-**Do NOT edit ADR files directly.** Invoke the **`adr-author`** skill via the Skill tool
-(Edit Mode to extend, Create Mode for a new ADR). It is the authoritative ADR authoring layer
-and ensures every ADR meets the project's structure and quality bar.
+**Do NOT edit ADR files directly.** Invoke the **`adr-author`** skill (Edit Mode to extend, Create Mode for a new ADR). It is the authoritative ADR authoring layer and ensures every ADR meets the project's structure and quality bar.
 
-### Writing project memory
+### Rule enforcement — accompany the ADR with a `.rules.ts`
 
-The project's durable, agent-agnostic memory lives in `AGENTS.md` (loaded into every session
-at startup) and the harness memory under `.claude/agent-memory/`. Pick the right home, read
-the current file, add the learning under the right section, and keep entries concise — this
-file is loaded into every session.
+An ADR without automated enforcement is a wish: agents drift away from it under pressure, and human reviewers must catch every recurrence by hand. Whenever you capture a learning that is checkable, **accompany the ADR with an automated rule**:
+
+- **When to automate:** the constraint is statically checkable or verifiable from file contents (forbidden/required imports, path shapes, literals, naming patterns, config values).
+- **When to stay prose-only:** the rule needs cross-file semantic reasoning that a static check cannot do without modelling runtime behaviour. State this explicitly in the ADR's Consequences/Compliance section.
+- **Often it is BOTH:** enforce the clear-cut slice with a rule and leave subtle edge cases to human review.
+
+Instruct `adr-author` to author the ADR with `rules: true` and create the companion `.rules.ts` in one invocation. Then validate:
+1. Run `archgate check` and confirm the new rule loads and passes on the corrected tree.
+2. Confirm the rule is not a no-op: it would have flagged the defect before the fix.
+3. Scope precisely: prefer narrow glob patterns to avoid false-positives across unrelated modules.
+
+### Writing operational knowledge
+
+Operational learnings (tooling quirks, build pitfalls, environment traps) should be kept in dedicated reference docs rather than bloating `AGENTS.md`. `AGENTS.md` is loaded into every session context, so general operational traps should be accessed on-demand by symptom. `AGENTS.md` only takes learnings that modify overarching project rules (branch policies, PR requirements, language standards).
 
 ## Step 5: Report
 

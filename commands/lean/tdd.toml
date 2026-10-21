@@ -66,6 +66,8 @@ npm test -- <test-file> --reporter=verbose
 
 Everything after `--` is forwarded to Vitest, so the `<test-file>` filter scopes the run to the slice you're on. Use the inner loop's `npm test` (which runs **without** coverage), not `npm run test:coverage`: a single-file run only covers a few percent of the suite, so running it under the global coverage threshold would exit non-zero **even when your tests pass** — making a real red indistinguishable from a coverage-threshold red. The coverage gate belongs to the whole-net run in step 5.
 
+**Important:** Never run tests in watch mode. Always use file-scoped single-run commands to prevent spawning runaway background tasks (`test-execution.md`). Before initiating a new test command, check active background tasks via `manage_task` and terminate any stale test processes.
+
 Adjust the **implementation, never the test**. A pre-existing test going red is a regression — fix it before continuing. Never weaken a test to make it pass; if a test is genuinely wrong, change the specification explicitly and rewrite it from scratch.
 
 ### 5. Refactor — only while green
@@ -81,6 +83,8 @@ npm run archgate
 
 A unit with two passing tests and one failing test is not done.
 
+A user-facing change then goes to `/walkthrough`, which walks its Manual Test Plan in the running app or CLI before `/reviewer`.
+
 ## Checklist per cycle
 
 ```
@@ -94,7 +98,7 @@ A unit with two passing tests and one failing test is not done.
 
 ## Hand-off
 
-Next: review the change with `/reviewer`, capture learnings with `/lessons-learned`, then commit, push, and open the PR with `/pr`.
+Next: verify user-visible changes with `/walkthrough`, review the change with `/reviewer`, capture learnings with `/lessons-learned`, then commit, push, and open the PR with `/pr`.
 
 
 ---

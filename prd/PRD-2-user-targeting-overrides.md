@@ -1,5 +1,7 @@
 # PRD-2: Per-user targeting overrides
 
+**Tracking issue:** #2
+
 ## Problem Statement
 
 As a release engineer running a percentage rollout, I need specific users to be

@@ -1,0 +1,91 @@
+---
+name: walkthrough
+description: Walkthrough — walk a change's Manual Test Plan step by step in the running app or test environment, the way a user would experience it. Use once the last /tdd phase is green and before /reviewer, when the user asks to test or verify a change in the browser or runtime, or when PR rework needs the Manual Test Plan walked again. Its Nightly mode is the brief for an unattended walk on a test stage.
+allowed-tools: Read, Glob, Grep, Bash(git:*), Bash(npm:*), AskUserQuestion
+---
+# Walkthrough
+
+A **walkthrough** exercises the change in the running app or runtime environment exactly as its Manual Test Plan (`GEN-006`) scripts it: one step, one observation, one verdict — under human supervision. The users are end consumers, so a green test suite is not the finish line; the walkthrough is. It belongs to the **Artefact** phase and runs **once**, after the plan's last `/tdd` phase is green and before `/reviewer` (`WORKFLOW.md`).
+
+## 1. Write the script
+
+Take the steps from the first source that has them:
+
+1. The PR's `## Manual Test Plan` (`gh pr view <n> --json body`) — on PR rework the PR exists.
+2. The plan the branch implements: every phase's `### Manual Test Plan` in `plans/PLN-<n>-*.md`, in phase order.
+3. The Manual-Test-Plan seed `/bug-analysis` emitted in this session.
+4. None of these (change request, ad-hoc change): draft steps from the diff.
+
+A shell step (`npm test is green`) is not re-run interactively: `/tdd` already drove it green. List it under the script as *covered by /tdd* and leave it out of the interactive walk.
+
+Turn every other step into one row of the **script**:
+
+| # | Persona / Context | Start URL / Surface | Action | Expected |
+| --- | --- | --- | --- | --- |
+
+- Fill every blank the step leaves open — persona, role, record, URL/CLI input — and mark each filled value as an *assumption*. A step without an observable expected result gets one, marked the same way. A step drafted from the diff is an assumption as a whole.
+- Keep the source order; within it, group rows by persona or context so session switches stay few.
+
+Show the script. If it carries an assumption, get the user's go-ahead before walking — once, for the whole script. If every row came from the source verbatim, start walking.
+
+**Done when** every user-facing step of the Manual Test Plan is a row with a checkable expected result, every shell step is listed as covered, and every assumption has user approval.
+
+## 2. Secure the environment
+
+The **target** is the local environment or dev server — the default, because before the merge only this worktree carries the change. A deployed dev/test stage is the target only when the user explicitly requests it.
+
+For a local server or app, verify before anything starts:
+- Confirm whether required local services or dev servers are up and serving the current branch's code.
+- If a service needs starting, run the project's dev script (e.g. `npm run dev`) or ask the user.
+- If dependencies or builds changed, ensure `npm install` and `npm run build` were run.
+
+**Done when** the target environment runs the branch's current code.
+
+## 3. Walk the script
+
+One step, one row at a time, in script order:
+
+1. Switch to the row's persona or context.
+2. Perform the action. **Observe** the expected result where a user would see it — the UI text, the element, the rendered output, or the command response — never purely in internal state.
+3. Check the console or logs for errors after each step.
+4. Record the verdict:
+   - **pass** — outcome matches expected behaviour.
+   - **fail** — outcome diverges from expected behaviour (observed vs. expected).
+   - **blocked** — the step could not be executed due to environment or missing preconditions (state why).
+
+On a **fail**, fix it and walk on:
+- Find the root cause (using `/bug-analysis` if non-trivial).
+- Fix it test-first with `/tdd`.
+- Commit as a fix commit.
+- Resume at the failed row and re-walk every step the fix touches.
+- Stop and consult the user only when the fix requires changing the agreed specification or contract.
+
+**Done when** every row carries a verdict and every fail is fixed and re-walked, or carries the user's explicit decision.
+
+## 4. Report
+
+Print the script with its verdicts and how each failure ended (fix commit, follow-up issue, or amended step).
+
+- If the PR exists, update its `## Manual Test Plan` using `gh pr edit <n> --body-file -`, ticking passed steps (`- [x]`) and leaving open or failed steps unticked (`- [ ]`).
+- If opening a new PR, the walked script becomes the `## Manual Test Plan` that `/pr` writes into the body.
+
+**Done when** the user has the verdict table and every fail is resolved as a fix commit, an issue, or an amended step.
+
+---
+
+## Nightly mode
+
+This section is the self-contained brief for an **unattended nightly walk** on a shared test environment. A runner hands it to an isolated agent: no files, no repository, no other instructions. Steps 1–4 above do not apply.
+
+**Who you are.** You are a first-time user who knows little about the product. You find your way through the user interface or application alone — through menus, buttons, hints, and documentation — the way a real user would.
+
+**Guidelines:**
+- **Observe like a user:** Judge the outcome where a user would see it — rendered UI, returned data, error messages — not internal backend storage.
+- **Search budget:** Allow a limited budget (e.g. 2 wrong turns or 10 actions) per goal before marking it `not found`.
+- **Look twice before a fail:** If an action fails unexpectedly, re-observe once (reload or re-request) without duplicating state-changing operations.
+- **Distinguish blocked vs. fail:** If external dependencies or bot checks prevent execution, mark `blocked` with the explanation rather than `fail`.
+- **UX findings:** Record friction points:
+  - `copy`: Unclear jargon, language inconsistencies, missing help hints.
+  - `error-loading`: Empty states without explanation, unhandled console errors, slow feedback.
+  - `discoverability`: Dead ends or detours on common journeys.
+

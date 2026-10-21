@@ -51,7 +51,7 @@ flowchart LR
 
   subgraph SPINE["🟩 Shared delivery spine"]
     direction LR
-    A["Agent<br/>/tdd"] --> AR["Artefact<br/>refactor"]
+    A["Agent<br/>/tdd"] --> AR["Artefact<br/>refactor · /walkthrough"]
     AR --> CO["Commit<br/>/reviewer · /lessons-learned · /pr"]
     CO -.->|"local ┃ remote"| HK["Hooks<br/>pre-push"]
     HK --> PU["Push<br/>ci.yml"]
@@ -148,8 +148,8 @@ flowchart TD
 | 2   | PRD       | `/grill-me-with-context` → `/adr-author`               | all `*-adrs`                              | `AGENTS.md`, `WORKFLOW.md`, `README.md` | —                          | —                         | —                                    |
 | 3   | Plan      | `/prd-to-plan`, then `/grill-me-with-context`          | `*-adrs`; `GEN-006` per phase             | writes `plans/PLN-<n>-<slug>.md`   | —                              | —                         | —                                    |
 | 4   | Agent     | `/tdd` (red → green)                                    | `GEN-004`, `GEN-005`, `GEN-003`, `ARCH-001` | PRD + plan                        | **Unit** (`tests/unit/`)       | —                         | opens `feat/<slug>`; **spec = first commit** |
-| 5   | Artefact  | `/tdd` (refactor while green)                           | `ARCH-001`, area ADRs                      | updated docs                       | Unit                           | —                         | —                                    |
-| 6   | Commit    | `/reviewer` → `/lessons-learned` → `/pr` (commit)      | archgate = all ADRs; `GEN-001`            | ADRs / agent-memory                | Unit                           | local archgate            | Conventional-Commits commit          |
+| 5   | Artefact  | `/tdd` (refactor) → `/walkthrough`                       | `ARCH-001`, `GEN-006` (Manual Test Plan)   | updated docs, walked script        | Unit · Manual Test Plan        | —                         | —                                    |
+| 6   | Commit    | `/reviewer` → `/lessons-learned` → `/pr` (merge & commit)| archgate = all ADRs; `GEN-001`            | ADRs / agent-memory                | Unit                           | local archgate            | merge origin/main; Conventional commit |
 | 7   | Hooks     | `/pr` (push fires the hook)                             | symlink invariants, archgate, `GEN-005`   | —                                  | Unit · Smoke                   | `.husky/pre-push`         | pre-push gate                        |
 | 8   | Push      | `/pr`                                                   | `GEN-005`                                  | —                                  | Unit · Smoke (`tests/smoke/`)  | `ci.yml`                  | branch pushed                        |
 | 9   | PR        | `/pr` + human review                                    | `AGENTS.md` PR Descriptions, `GEN-006`     | PR body (Summary/Commits/Manual Test Plan) | — (e2e run on demand, `GEN-002`) | `ci.yml`                | PR opened, merged on green           |
@@ -200,6 +200,9 @@ ADRs), and `/decide-semver` (a manual release helper, see Versioning).
 - **Goal:** The concrete output — code, tests, and any updated docs.
 - **Human:** **Refactoring** — tidy the artefact for clarity and reuse (while the
   suite stays green) before it is committed.
+- **Skill:** `/walkthrough` — once the plan's last phase is green, walks its
+  Manual Test Plan (`GEN-006`) interactively in the running application or CLI before
+  review. Passed steps are ticked (`- [x]`); failures are addressed with `/tdd` fixes.
 - **Loop:** Feeds back into **Agent** as needed.
 
 ### 6. Commit
@@ -208,11 +211,12 @@ ADRs), and `/decide-semver` (a manual release helper, see Versioning).
 - **Skills (in order):** `/reviewer` — local [archgate](https://archgate.dev) (the
   external architecture-governance CLI) review of the diff;
   `/lessons-learned` — capture learnings into `.claude/agent-memory/` and/or ADRs;
-  **then** `/pr` commits the work (Conventional Commits). `/pr` always runs after
-  `/reviewer` and `/lessons-learned`.
+  **then** `/pr` merges `origin/main` down and commits the work (Conventional Commits).
+  `/pr` always runs after `/reviewer` and `/lessons-learned`.
 - **Boundary:** This is the last local step before the work crosses into CI.
-- **Done when:** The diff passes the local reviewer, learnings are captured, and
-  the change is committed with a Conventional-Commits message.
+- **Done when:** The diff passes the local reviewer, learnings are captured,
+  `origin/main` is merged down cleanly, and the change is committed with a
+  Conventional-Commits message.
 
 ### 7. Hooks (pre-push)
 
