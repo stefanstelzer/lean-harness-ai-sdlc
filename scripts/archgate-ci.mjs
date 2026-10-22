@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Wrapper for the archgate CLI that turns its --json output into
+// Wrapper for the archgate CLI that turns its `check --output json` output into
 // human-readable failure blocks (rule, file:line, message, fix) and
 // re-emits GitHub Actions annotations. Used by the push pipeline to
 // surface *which file* tripped a rule — the bare `--ci` output only
@@ -39,7 +39,7 @@ export function formatArchgateSummary(report) {
 // resort use a *version-pinned* npx — never an unpinned `npx archgate`, which
 // would float to @latest and make the gate non-reproducible. Keep
 // ARCHGATE_VERSION in sync with the "archgate" devDependency in package.json.
-const ARCHGATE_VERSION = "0.45.7";
+const ARCHGATE_VERSION = "0.60.0";
 const localBin = fileURLToPath(
   new URL("../node_modules/.bin/archgate", import.meta.url),
 );
@@ -54,7 +54,7 @@ if (existsSync(localBin)) {
   [cmd, baseArgs] = ["npx", ["-y", `archgate@${ARCHGATE_VERSION}`]];
 }
 
-const result = spawnSync(cmd, [...baseArgs, "check", "--json"], {
+const result = spawnSync(cmd, [...baseArgs, "check", "--output", "json"], {
   encoding: "utf8",
   maxBuffer: 64 * 1024 * 1024,
 });
